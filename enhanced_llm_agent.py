@@ -72,6 +72,7 @@ class EnhancedLLMElectionAgent:
         self.prediction_models = self.initialize_prediction_models()
         
     def load_election_data(self):
+<<<<<<< HEAD
         """Load and preprocess election data, prioritizing real_election_data.csv."""
         print("Attempting to load election data...")
         real_data_path = os.path.join(self.data_folder, 'real_election_data.csv')
@@ -86,19 +87,40 @@ class EnhancedLLMElectionAgent:
 
         print(f"Found data file at: {data_file_path}")
         try:
+=======
+        """Load and preprocess election data."""
+        data_file_path = os.path.join(self.data_folder, 'data.csv')
+
+        if not os.path.exists(data_file_path):
+            print(f"X CRITICAL: Data file not found at {data_file_path}")
+            self.demographic_df = pd.DataFrame() # Ensure it's an empty DataFrame
+            return
+
+        try:
+            # Calculate current hash of data.csv
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             with open(data_file_path, 'rb') as f:
                 current_hash = hashlib.md5(f.read()).hexdigest()
             
             if self.data_csv_hash and self.data_csv_hash != current_hash:
+<<<<<<< HEAD
                 print(f"!!! WARNING: {os.path.basename(data_file_path)} content has changed! Reloading data. !!!")
             
             self.data_csv_hash = current_hash
 
+=======
+                print(f"!!! WARNING: data.csv content has changed! Reloading data. !!!")
+            
+            self.data_csv_hash = current_hash
+
+            # Load demographic data from data.csv with robust encoding handling
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             try:
                 df = pd.read_csv(data_file_path, encoding='utf-8')
             except UnicodeDecodeError:
                 df = pd.read_csv(data_file_path, encoding='latin-1')
 
+<<<<<<< HEAD
             print(f"Successfully loaded {data_file_path} into a DataFrame.")
             # Clean and rename columns to be consistent
             df.rename(columns={
@@ -111,16 +133,27 @@ class EnhancedLLMElectionAgent:
                 'total_votes': 'total'
             }, inplace=True)
 
+=======
+            # Clean demographic data
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             df.dropna(subset=['sex', 'age'], inplace=True)
             df = df[df['sex'] != '']
             df['age'] = pd.to_numeric(df['age'], errors='coerce')
             df['total'] = pd.to_numeric(df['total'], errors='coerce')
+<<<<<<< HEAD
             df['year'] = pd.to_numeric(df['year'], errors='coerce')
             df.dropna(subset=['age', 'total', 'year'], inplace=True)
 
             self.demographic_df = df
             print(f"DataFrame processed. Shape: {self.demographic_df.shape}")
             
+=======
+            df.dropna(subset=['age', 'total'], inplace=True)
+
+            self.demographic_df = df
+            
+            # Populate other dataframes from the main one
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             self.candidates_df = self.demographic_df[
                 ['candidate_name', 'party', 'sex', 'age', 'ac_name', 'total']
             ].copy().rename(columns={'total': 'Candidate_Votes'})
@@ -129,11 +162,19 @@ class EnhancedLLMElectionAgent:
                 ['year', 'ac_name', 'candidate_name', 'party']
             )['total'].sum().reset_index().rename(columns={'total': 'Votes'})
 
+<<<<<<< HEAD
             print(f"V Loaded {self.candidates_df['candidate_name'].nunique()} candidates from {os.path.basename(data_file_path)}")
             
         except Exception as e:
             print(f"X CRITICAL: Error loading or processing data from {data_file_path}: {e}")
             self.demographic_df = pd.DataFrame()
+=======
+            print(f"V Loaded {self.candidates_df['candidate_' + 'name'].nunique()} candidates, {len(self.votes_df)} vote records, and {len(self.demographic_df)} demographic records")
+            
+        except Exception as e:
+            print(f"X CRITICAL: Error loading or processing data from {data_file_path}: {e}")
+            self.demographic_df = pd.DataFrame() # Ensure it's an empty DataFrame on error
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
     
     def initialize_prediction_models(self) -> Dict[str, Any]:
         """Initialize simulated ML models for predictions."""

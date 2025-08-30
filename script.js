@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     class APIService {
         constructor() {
             this.baseURL = API_BASE_URL;
+<<<<<<< HEAD
         }
         
         async request(endpoint, options = {}) {
@@ -108,6 +109,35 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error(`Failed to fetch from ${url}:`, error.message);
                 throw error;
+=======
+            this.fallbackURL = FALLBACK_API;
+        }
+        
+        async request(endpoint, options = {}) {
+            const urls = [`${this.baseURL}${endpoint}`, `${this.fallbackURL}${endpoint}`];
+            
+            for (const url of urls) {
+                try {
+                    const response = await fetch(url, {
+                        ...options,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...options.headers
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    console.error(`Failed to fetch from ${url}:`, error.message);
+                    if (url === urls[urls.length - 1]) {
+                        throw error;
+                    }
+                }
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             }
         }
         
@@ -150,10 +180,13 @@ document.addEventListener('DOMContentLoaded', () => {
         async getDemographicAnalysis() {
             return this.request('/api/analytics/demographics');
         }
+<<<<<<< HEAD
 
         async getHistoricalVotes() {
             return this.request('/api/analytics/historical-votes');
         }
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
     }
     
     // ===============================================
@@ -195,7 +228,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             usePointStyle: true,
                             padding: 20,
                             font: {
+<<<<<<< HEAD
                                 size: 16,
+=======
+                                size: 12,
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                                 weight: 'bold'
                             }
                         }
@@ -207,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         borderColor: '#E84142',
                         borderWidth: 1,
                         cornerRadius: 10,
+<<<<<<< HEAD
                         displayColors: true,
                         titleFont: { size: 16, weight: 'bold' },
                         bodyFont: { size: 14 }
@@ -221,6 +259,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             top: 10,
                             bottom: 20
                         }
+=======
+                        displayColors: true
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                     }
                 },
                 animation: {
@@ -230,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 interaction: {
                     intersect: false,
                     mode: 'index'
+<<<<<<< HEAD
                 },
                 scales: {
                     x: {
@@ -262,6 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     }
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                 }
             };
             
@@ -407,7 +451,10 @@ document.addEventListener('DOMContentLoaded', () => {
             this.socket.on('connect_error', (error) => {
                 console.error('WebSocket connection error:', error);
                 this.handleConnectionError();
+<<<<<<< HEAD
                 app.handleInitializationError(error);
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             });
             
             // Live data updates
@@ -463,6 +510,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (data.ai_insights) {
+<<<<<<< HEAD
+=======
+                this.updateAIInsights(data.ai_insights);
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                 this.updateIntelligenceHub(data.ai_insights);
             }
             
@@ -536,6 +587,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+<<<<<<< HEAD
+=======
+        updateAIInsights(insights) {
+            const insightsContainer = document.getElementById('summary-text');
+            if (insightsContainer && insights.length > 0) {
+                const insightHtml = insights.slice(0, 3).map(insight => `
+                    <div class="ai-insight-item mb-3">
+                        <h6 class="text-avalanche-blue">${insight.title}</h6>
+                        <p class="mb-1">${insight.description}</p>
+                        <small class="text-muted">Confidence: ${Math.round(insight.confidence * 100)}%</small>
+                    </div>
+                `).join('');
+                
+                insightsContainer.innerHTML = insightHtml;
+            }
+        }
+        
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         updateAnalytics(data) {
             if (!data) return;
             // Update various stat elements
@@ -566,11 +635,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (hubContainer && insights.length > 0) {
                 const insightHtml = insights.map(insight => `
                     <div class="narrative-insight mb-3">
+<<<<<<< HEAD
                         <h6 class="insight-title"><i class="fas fa-lightbulb me-2"></i>${insight.title}</h6>
                         <p class="insight-description">${insight.description}</p>
                         <div class="insight-meta mt-2">
                             <span class="badge bg-confidence">Confidence: ${Math.round(insight.confidence * 100)}%</span>
                             <span class="badge bg-priority ms-2">Priority: ${insight.importance}/10</span>
+=======
+                        <h6 class="text-avalanche-blue"><i class="fas fa-lightbulb me-2"></i>${insight.title}</h6>
+                        <p>${insight.description}</p>
+                        <div class="insight-meta mt-2">
+                            <span class="badge bg-avalanche-green">Confidence: ${Math.round(insight.confidence * 100)}%</span>
+                            <span class="badge bg-avalanche-orange ms-2">Priority: ${insight.importance}/10</span>
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                         </div>
                     </div>
                 `).join('');
@@ -619,6 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         updateCandidateCharts(candidateData) {
+<<<<<<< HEAD
             const topCandidates = [...candidateData].sort((a, b) => b.votes - a.votes).slice(0, 5);
 
             // Update main voting chart
@@ -627,6 +705,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Votes',
                     data: topCandidates.map(c => c.votes),
+=======
+            // Update main voting chart
+            const chartData = {
+                labels: candidateData.map(c => c.name),
+                datasets: [{
+                    label: 'Votes',
+                    data: candidateData.map(c => c.votes),
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                     backgroundColor: chartManager.colorSchemes.avalanche,
                     borderColor: '#ffffff',
                     borderWidth: 2
@@ -637,9 +723,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Update percentage chart
             const percentageData = {
+<<<<<<< HEAD
                 labels: topCandidates.map(c => c.name),
                 datasets: [{
                     data: topCandidates.map(c => c.percentage),
+=======
+                labels: candidateData.map(c => c.name),
+                datasets: [{
+                    data: candidateData.map(c => c.percentage),
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                     backgroundColor: chartManager.colorSchemes.avalanche,
                     borderColor: '#ffffff',
                     borderWidth: 2
@@ -779,6 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===============================================
     
     class SearchManager {
+<<<<<<< HEAD
         constructor(apiService, chartManager, app) {
             this.apiService = apiService;
             this.chartManager = chartManager;
@@ -802,6 +895,23 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("SearchManager: Initializing search...");
             if (!this.searchInput || !this.searchResults || !this.searchButton) {
                 console.error("SearchManager: Search elements not found in the DOM.");
+=======
+        constructor(apiService, chartManager) {
+            this.apiService = apiService;
+            this.chartManager = chartManager;
+            this.constituencies = [];
+            this.searchInput = null;
+            this.searchResults = null;
+            this.initializeSearch();
+        }
+        
+        async initializeSearch() {
+            this.searchInput = document.getElementById('constituencySearch');
+            this.searchResults = document.getElementById('searchResults');
+            
+            if (!this.searchInput || !this.searchResults) {
+                console.error("Search elements not found in the DOM.");
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                 return;
             }
 
@@ -809,6 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const response = await this.apiService.getConstituencies();
+<<<<<<< HEAD
                 console.log("SearchManager: Fetched constituencies response:", response);
                 if (response && Array.isArray(response.constituencies)) {
                     this.constituencies = response.constituencies;
@@ -820,14 +931,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('SearchManager: Failed to load constituencies:', error);
                 this.constituencies = [];
                 this.showError("Could not load constituency data.");
+=======
+                
+                // Flexible data handling for constituencies
+                if (response && Array.isArray(response.constituencies)) {
+                    // Handles { success: true, constituencies: [...] }
+                    this.constituencies = response.constituencies;
+                } else if (Array.isArray(response)) {
+                    // Handles a direct array response [...]
+                    this.constituencies = response;
+                } else {
+                    throw new Error("Invalid or unexpected data format for constituencies.");
+                }
+
+            } catch (error) {
+                console.error('Failed to load constituencies:', error);
+                this.constituencies = [];
+                this.showError("Could not load constituency data. Search is disabled.");
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             }
         }
         
         setupSearchEventListeners() {
+<<<<<<< HEAD
+=======
+            const searchInput = document.getElementById('constituencySearch');
+            const searchResults = document.getElementById('searchResults');
+            const searchButton = document.getElementById('searchButton');
+            
+            if (!searchInput || !searchResults || !searchButton) return;
+            
+            this.searchInput = searchInput;
+            this.searchResults = searchResults;
+            this.highlightedIndex = -1;
+            
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             let searchTimeout;
             
             this.searchInput.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
+<<<<<<< HEAD
                 searchTimeout = setTimeout(() => this.performSearch(e.target.value), 300);
             });
 
@@ -859,6 +1002,49 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     } else {
                         this.handleSearchAction();
+=======
+                searchTimeout = setTimeout(() => {
+                    this.performSearch(e.target.value);
+                }, 300);
+            });
+
+            searchButton.addEventListener('click', () => {
+                const query = this.searchInput.value;
+                if (query) {
+                    // Find the best match and select it
+                    const bestMatch = this.constituencies.find(c => c.toLowerCase() === query.toLowerCase());
+                    if (bestMatch) {
+                        this.selectConstituency(bestMatch);
+                    } else {
+                        // If no exact match, take the first result from the filtered list
+                        const filtered = this.constituencies.filter(c => c.toLowerCase().includes(query.toLowerCase()));
+                        if (filtered.length > 0) {
+                            this.selectConstituency(filtered[0]);
+                        } else {
+                            this.showError("No matching constituency found.");
+                        }
+                    }
+                }
+            });
+
+            this.searchInput.addEventListener('keydown', (e) => {
+                const items = this.searchResults.querySelectorAll('.search-result-item');
+                if (items.length === 0) return;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.highlightedIndex = (this.highlightedIndex + 1) % items.length;
+                    this.updateHighlight(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.highlightedIndex = (this.highlightedIndex - 1 + items.length) % items.length;
+                    this.updateHighlight(items);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this.highlightedIndex > -1) {
+                        const selectedItem = items[this.highlightedIndex];
+                        this.selectConstituency(selectedItem.dataset.constituency);
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                     }
                 } else if (e.key === 'Escape') {
                     this.hideSearchResults();
@@ -866,13 +1052,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             this.searchInput.addEventListener('focus', () => {
+<<<<<<< HEAD
                 if (this.searchInput.value === '') {
                     this.displaySearchResults(this.topSuggestions, "Top Suggestions");
                 } else if (this.searchResults.children.length > 0) {
+=======
+                if (this.searchResults && this.searchResults.children.length > 0) {
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                     this.searchResults.style.display = 'block';
                 }
             });
             
+<<<<<<< HEAD
             document.addEventListener('click', (e) => {
                 if (!this.searchInput.contains(e.target) && !this.searchResults.contains(e.target)) {
                     this.hideSearchResults();
@@ -902,17 +1093,39 @@ document.addEventListener('DOMContentLoaded', () => {
         updateHighlight(items) {
             items.forEach((item, index) => {
                 item.classList.toggle('active', index === this.highlightedIndex);
+=======
+            this.searchInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (this.searchResults) {
+                        this.searchResults.style.display = 'none';
+                    }
+                }, 200);
+            });
+        }
+
+        updateHighlight(items) {
+            items.forEach((item, index) => {
+                if (index === this.highlightedIndex) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             });
         }
         
         performSearch(query) {
+<<<<<<< HEAD
             console.log("SearchManager: Performing search for query:", query);
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             if (!query || query.length < 2) {
                 this.hideSearchResults();
                 return;
             }
 
             if (this.constituencies.length === 0) {
+<<<<<<< HEAD
                 this.displaySearchResults([], "No data available");
                 return;
             }
@@ -930,10 +1143,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 content += `<div class="search-result-item text-muted">No results found.</div>`;
             } else {
                 content += results.map(result => `
+=======
+                this.displaySearchResults([]);
+                return;
+            }
+
+            const filtered = this.constituencies.filter(c => 
+                c.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            this.displaySearchResults(filtered.slice(0, 10));
+        }
+        
+        displaySearchResults(results) {
+            if (!this.searchResults) return;
+
+            if (results.length === 0) {
+                this.searchResults.innerHTML = `<div class="search-result-item text-muted">No results found.</div>`;
+            } else {
+                this.searchResults.innerHTML = results.map(result => `
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                     <div class="search-result-item" data-constituency="${result}">
                         ${result}
                     </div>
                 `).join('');
+<<<<<<< HEAD
             }
             
             this.searchResults.innerHTML = content;
@@ -943,11 +1177,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             this.searchResults.style.display = 'block';
             this.highlightedIndex = -1;
+=======
+
+                this.searchResults.querySelectorAll('.search-result-item').forEach(item => {
+                    item.addEventListener('mousedown', (e) => {
+                        this.selectConstituency(e.target.dataset.constituency);
+                    });
+                });
+            }
+            
+            this.searchResults.style.display = 'block';
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         }
         
         hideSearchResults() {
             if (this.searchResults) {
                 this.searchResults.style.display = 'none';
+<<<<<<< HEAD
             }
         }
         
@@ -960,10 +1206,27 @@ document.addEventListener('DOMContentLoaded', () => {
             currentConstituency = constituency;
             this.searchInput.value = constituency;
             this.hideSearchResults();
+=======
+                this.searchResults.innerHTML = '';
+            }
+        }
+        
+        async selectConstituency(constituency) {
+            currentConstituency = constituency;
+            
+            if (this.searchInput) {
+                this.searchInput.value = constituency;
+            }
+            
+            this.hideSearchResults();
+            
+            // Load constituency analysis
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             await this.loadConstituencyAnalysis(constituency);
         }
         
         async loadConstituencyAnalysis(constituency) {
+<<<<<<< HEAD
             console.log("SearchManager: Loading analysis for constituency:", constituency);
             try {
                 connectionManager.showLoading(`Loading analysis for ${constituency}...`);
@@ -982,6 +1245,170 @@ document.addEventListener('DOMContentLoaded', () => {
                 connectionManager.hideLoading();
             }
         }
+=======
+            try {
+                connectionManager.showLoading(`Loading analysis for ${constituency}...`);
+                
+                const analysis = await this.apiService.getConstituencyAnalysis(constituency);
+                
+                if (analysis.success) {
+                    this.displayConstituencyAnalysis(constituency, analysis);
+                } else {
+                    throw new Error(analysis.error || 'Failed to load constituency analysis');
+                }
+                
+                connectionManager.hideLoading();
+                
+            } catch (error) {
+                console.error('Error loading constituency analysis:', error);
+                connectionManager.hideLoading();
+                this.showError(`Failed to load analysis for ${constituency}: ${error.message}`);
+            }
+        }
+        
+        displayConstituencyAnalysis(constituency, analysis) {
+            const comprehensiveSection = document.getElementById('comprehensive-analysis');
+            const candidateSection = document.getElementById('candidate-results');
+            const demographicSection = document.getElementById('demographic-analytics');
+            const constituencySection = document.getElementById('constituency-analysis');
+            const contentDisplay = document.getElementById('constituency-analysis-content');
+            const nameDisplay = document.getElementById('constituency-name-display');
+
+            if (!comprehensiveSection || !candidateSection || !demographicSection || !constituencySection || !contentDisplay || !nameDisplay) {
+                console.error("One or more display sections are missing from the DOM.");
+                return;
+            }
+
+            // Hide main dashboard sections
+            comprehensiveSection.style.display = 'none';
+            candidateSection.style.display = 'none';
+            demographicSection.style.display = 'none';
+
+            // Set the title
+            nameDisplay.textContent = constituency;
+
+            // Build the inner HTML for the analysis
+            const analysisHtml = `
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="constituency-insights">
+                            <h5 class="text-avalanche-blue mb-3">AI Insights for ${constituency}</h5>
+                            ${analysis.insights.map(insight => `
+                                <div class="narrative-insight mb-3">
+                                    <h6 class="text-avalanche-blue">${insight.title}</h6>
+                                    <p>${insight.description}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="constituency-stats">
+                            <div class="stat-card glass-effect p-3 mb-3">
+                                <h5 class="text-avalanche-blue mb-3">Summary</h5>
+                                <div class="stat-item mb-2"><strong>Total Votes:</strong> ${analysis.summary.total_votes.toLocaleString()}</div>
+                                <div class="stat-item mb-2"><strong>Candidates:</strong> ${analysis.summary.total_candidates}</div>
+                                <div class="stat-item mb-2"><strong>Years Covered:</strong> ${analysis.summary.years_covered.join(', ')}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <h5 class="chart-title">Age Distribution</h5>
+                            <div class="chart-container" style="height: 300px;">
+                                <canvas id="constituencyAgeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <h5 class="chart-title">Gender Distribution</h5>
+                            <div class="chart-container" style="height: 300px;">
+                                <canvas id="constituencyGenderChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-avalanche mt-4" id="backToOverviewBtn">Back to Overview</button>
+            `;
+            
+            contentDisplay.innerHTML = analysisHtml;
+
+            // NOW create the charts, after the canvas elements are in the DOM
+            if (analysis.chart_data) {
+                const ageData = {
+                    labels: Object.keys(analysis.chart_data.age_distribution),
+                    datasets: [{ label: 'Votes', data: Object.values(analysis.chart_data.age_distribution).map(d => d.votes), backgroundColor: this.chartManager.colorSchemes.rainbow }]
+                };
+                this.chartManager.createChart('constituencyAgeChart', 'bar', ageData);
+
+                const genderData = {
+                    labels: Object.keys(analysis.chart_data.gender_distribution),
+                    datasets: [{ data: Object.values(analysis.chart_data.gender_distribution).map(d => d.votes), backgroundColor: ['#2D74DA', '#E84142', '#00D4AA'] }]
+                };
+                this.chartManager.createChart('constituencyGenderChart', 'pie', genderData);
+            }
+
+            // Show the constituency section
+            constituencySection.classList.remove('d-none');
+            constituencySection.scrollIntoView({ behavior: 'smooth' });
+
+            // Add event listener for the back button
+            document.getElementById('backToOverviewBtn').addEventListener('click', () => {
+                constituencySection.classList.add('d-none');
+                comprehensiveSection.style.display = 'block';
+                candidateSection.style.display = 'block';
+                demographicSection.style.display = 'block';
+            });
+        }
+        
+        showOverview() {
+            const comprehensiveSection = document.getElementById('comprehensive-analysis');
+            const constituencySection = document.getElementById('constituency-analysis');
+            
+            if (comprehensiveSection) {
+                comprehensiveSection.style.display = 'block';
+            }
+            
+            if (constituencySection) {
+                constituencySection.style.display = 'none';
+            }
+            
+            // Clear search input
+            if (this.searchInput) {
+                this.searchInput.value = '';
+            }
+            
+            currentConstituency = null;
+        }
+        
+        // populateConstituencyDropdown() function removed
+        
+        showError(message) {
+            const errorToast = document.createElement('div');
+            errorToast.className = 'toast-notification error';
+            errorToast.innerHTML = message;
+            errorToast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #E84142;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 9999;
+                max-width: 350px;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(errorToast);
+            
+            setTimeout(() => {
+                errorToast.remove();
+            }, 5000);
+        }
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
     }
     
     // ===============================================
@@ -1077,14 +1504,24 @@ document.addEventListener('DOMContentLoaded', () => {
             this.apiService = new APIService();
             this.chartManager = new ChartManager();
             this.wsManager = new WebSocketManager(this.apiService, this.chartManager);
+<<<<<<< HEAD
             this.searchManager = new SearchManager(this.apiService, this.chartManager, this);
+=======
+            this.searchManager = new SearchManager(this.apiService, this.chartManager);
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             this.themeManager = new ThemeManager();
             this.initialDataLoaded = false;
             this.loadingTimeout = null; // To manage the loading timeout
             this.allCandidates = []; // Store all candidates
+<<<<<<< HEAD
             this.candidateDisplayLimit = 5; // Number of candidates to show at once
             this.currentCandidateIndex = 0; // Starting index for rotation
             this.candidateRotationInterval = null; // To hold the interval ID
+=======
+            this.currentCandidateIndex = 0; // Current starting index for display
+            this.candidateDisplayLimit = 5; // Number of candidates to display at once
+            this.candidateRotationInterval = null; // To store the interval ID
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             
             this.init();
         }
@@ -1104,9 +1541,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Check backend health
                 await this.checkBackendHealth();
                 
+<<<<<<< HEAD
                 // Load historical data for the line chart
                 await this.loadHistoricalData();
 
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                 // Connect to WebSocket
                 this.wsManager.connect();
                 
@@ -1129,6 +1569,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear the loading timeout since we received data
             clearTimeout(this.loadingTimeout);
 
+<<<<<<< HEAD
             this.updateDashboard(data.analytics, "Overall");
 
             this.processAnalyticsData(data); // Pass the whole data object
@@ -1138,12 +1579,24 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.analytics && data.analytics.demographics) {
                 this.searchManager.setTopSuggestions(data.analytics.demographics.locations.top_10_counts);
+=======
+            this.processAnalyticsData(data.election_data);
+            this.processPredictionsData(data.ai_predictions || {}); // Safely pass ai_predictions
+            
+            if (data.analytics && data.analytics.demographics) {
+                this.processDemographicsData(data.analytics.demographics);
+                this.createDemographicCharts(data.analytics.demographics);
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             } else {
                 console.warn("handleInitialData: 'demographics' data missing from analytics object.", data);
             }
             
             if (data.election_data && data.election_data.candidates) {
                 this.allCandidates = data.election_data.candidates; // Store all candidates
+<<<<<<< HEAD
+=======
+                this.createEnhancedCharts(this.allCandidates.slice(0, this.candidateDisplayLimit)); // Display initial 5
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                 this.startCandidateRotation();
             } else {
                 console.error("handleInitialData: 'candidates' data missing from election_data object.", data);
@@ -1225,6 +1678,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // This function is now deprecated, initial data is loaded via WebSocket
         }
         
+<<<<<<< HEAD
         async loadHistoricalData() {
             try {
                 const historicalData = await this.apiService.getHistoricalVotes();
@@ -1264,6 +1718,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         processAnalyticsData(data) {
             if (data.election_data) {
                 // Update vote counts
@@ -1287,6 +1743,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
+<<<<<<< HEAD
             if (data.analytics) {
                 // Update AI insights count
                 const insightsEl = document.getElementById('total-insights');
@@ -1299,14 +1756,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     const confidenceEl = document.getElementById('avg-confidence');
                     if (confidenceEl) {
                         const confidence = Math.round(data.analytics.ai_predictions.confidence * 100);
+=======
+            if (data.live_analytics) {
+                // Update AI insights count
+                const insightsEl = document.getElementById('total-insights');
+                if (insightsEl && data.live_analytics.ai_insights) {
+                    insightsEl.textContent = data.live_analytics.ai_insights.length;
+                }
+                
+                // Update confidence
+                if (data.live_analytics.ai_predictions) {
+                    const confidenceEl = document.getElementById('avg-confidence');
+                    if (confidenceEl) {
+                        const confidence = Math.round(data.live_analytics.ai_predictions.confidence * 100);
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                         confidenceEl.textContent = `${confidence}%`;
                     }
                 }
                 
                 // Update high priority count
                 const highPriorityEl = document.getElementById('high-importance');
+<<<<<<< HEAD
                 if (highPriorityEl && data.analytics.security_status) {
                     highPriorityEl.textContent = data.analytics.security_status.anomalies_detected || '0';
+=======
+                if (highPriorityEl && data.live_analytics.security_status) {
+                    highPriorityEl.textContent = data.live_analytics.security_status.anomalies_detected || '0';
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                 }
             }
             
@@ -1376,7 +1852,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const summaryHtml = insights.slice(0, 3).map(insight => `
                     <div class="narrative-insight mb-3">
                         <h6 class="text-avalanche-blue"><i class="fas fa-lightbulb me-2"></i>${insight.title}</h6>
+<<<<<<< HEAD
                         <p class="text-primary">${insight.description}</p>
+=======
+                        <p>${insight.description}</p>
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                         <div class="insight-meta mt-2">
                             <span class="badge bg-avalanche-green">Confidence: ${Math.round(insight.confidence * 100)}%</span>
                             <span class="badge bg-avalanche-orange ms-2">Priority: ${insight.importance}/10</span>
@@ -1401,6 +1881,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.style.height = `${Math.max(350, newHeight)}px`;
         }
 
+<<<<<<< HEAD
         updateDashboard(analysisData, constituencyName = "Overall") {
             console.log(`Updating dashboard for: ${constituencyName}`);
 
@@ -1462,6 +1943,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Votes',
                     data: topCandidates.map(c => c.votes),
+=======
+        createEnhancedCharts(candidateData) {
+            if (!candidateData || candidateData.length === 0) {
+                console.warn("createEnhancedCharts: No candidate data provided.");
+                return;
+            }
+            
+            // Candidate votes chart (Horizontal Bar)
+            const votesData = {
+                labels: candidateData.map(c => c.name),
+                datasets: [{
+                    label: 'Votes',
+                    data: candidateData.map(c => c.votes),
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                     backgroundColor: this.chartManager.colorSchemes.avalanche,
                     borderColor: this.chartManager.colorSchemes.avalanche,
                     borderWidth: 1,
@@ -1476,7 +1971,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 plugins: {
                     title: {
                         display: true,
+<<<<<<< HEAD
                         text: `Live Vote Count - ${constituencyName}`,
+=======
+                        text: 'Live Vote Count',
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                         font: { size: 16, weight: 'bold' }
                     },
                     legend: { display: false }
@@ -1500,9 +1999,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Vote percentage chart
             const percentageData = {
+<<<<<<< HEAD
                 labels: Object.keys(votePercentages),
                 datasets: [{
                     data: Object.values(votePercentages),
+=======
+                labels: candidateData.map(c => c.name),
+                datasets: [{
+                    data: candidateData.map(c => c.percentage),
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                     backgroundColor: this.chartManager.colorSchemes.avalanche,
                     borderColor: '#ffffff',
                     borderWidth: 2
@@ -1515,13 +2020,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 plugins: {
                     title: {
                         display: true,
+<<<<<<< HEAD
                         text: `Vote Share % - ${constituencyName}`,
+=======
+                        text: 'Vote Share %',
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                         font: { size: 16, weight: 'bold' }
                     }
                 }
             });
         }
         
+<<<<<<< HEAD
         createDemographicCharts(demographics, constituencyName = "Overall") {
             if (!demographics) {
                 console.error("createDemographicCharts: Missing demographic data.", demographics);
@@ -1541,11 +2051,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     backgroundColor: this.chartManager.colorSchemes.avalanche,
                 }]
             };
+=======
+        createDemographicCharts(demographics) {
+            console.log("createDemographicCharts: Received demographics data:", JSON.stringify(demographics, null, 2));
+            if (!demographics || !demographics.age_groups || !demographics.gender || !demographics.locations) {
+                console.error("createDemographicCharts: Missing essential demographic data.", demographics);
+                return;
+            }
+
+            // Age group distribution
+            const ageGroupData = {
+                labels: Object.keys(demographics.age_groups.counts),
+                datasets: [{
+                    label: 'Votes',
+                    data: Object.values(demographics.age_groups.counts),
+                    backgroundColor: this.chartManager.colorSchemes.rainbow,
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            };
+            console.log("createDemographicCharts: Age Group Chart Data:", JSON.stringify(ageGroupData, null, 2));
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             
             this.chartManager.createChart('ageGroupDistributionChart', 'bar', ageGroupData, {
                 plugins: {
                     title: {
                         display: true,
+<<<<<<< HEAD
                         text: `Age Group Distribution - ${constituencyName}`
                     },
                     legend: { display: false }
@@ -1560,11 +2092,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     backgroundColor: ['#2D74DA', '#E84142', '#00D4AA'],
                 }]
             };
+=======
+                        text: 'Age Group Distribution'
+                    }
+                }
+            });
+            console.log("createDemographicCharts: Age Group Chart created.", this.chartManager.charts['ageGroupDistributionChart']);
+            
+            // Gender distribution
+            const genderData = {
+                labels: Object.keys(demographics.gender.counts),
+                datasets: [{
+                    data: Object.values(demographics.gender.counts),
+                    backgroundColor: ['#2D74DA', '#E84142', '#00D4AA'],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            };
+            console.log("createDemographicCharts: Gender Chart Data:", JSON.stringify(genderData, null, 2));
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             
             this.chartManager.createChart('genderVotingTrendsChart', 'pie', genderData, {
                 plugins: {
                     title: {
                         display: true,
+<<<<<<< HEAD
                         text: `Gender Distribution - ${constituencyName}`
                     },
                     datalabels: {
@@ -1632,6 +2184,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
+=======
+                        text: 'Gender Distribution'
+                    }
+                }
+            });
+            console.log("createDemographicCharts: Gender Chart created.", this.chartManager.charts['genderVotingTrendsChart']);
+            
+            // Location participation
+            const locationData = {
+                labels: Object.keys(demographics.locations.top_10_counts),
+                datasets: [{
+                    label: 'Participation',
+                    data: Object.values(demographics.locations.top_10_counts),
+                    backgroundColor: this.chartManager.colorSchemes.gradient,
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            };
+            console.log("createDemographicCharts: Location Chart Data:", JSON.stringify(locationData, null, 2));
+            
+            this.chartManager.createChart('locationParticipationChart', 'bar', locationData, {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Location-wise Participation'
+                    }
+                }
+            });
+            console.log("createDemographicCharts: Location Chart created.", this.chartManager.charts['locationParticipationChart']);
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         }
         
         loadFallbackData() {
@@ -1641,9 +2223,15 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners() {
             // 3D visualization controls
             const viewControls = {
+<<<<<<< HEAD
                 'viewGlobeBtn': 'globe',
                 'viewMapBtn': 'map',
                 'viewParticlesBtn': 'particles'
+=======
+                'viewGlobe': 'globe',
+                'viewMap': 'map',
+                'viewParticles': 'particles'
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             };
             
             Object.entries(viewControls).forEach(([buttonId, viewType]) => {
@@ -1661,6 +2249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
+<<<<<<< HEAD
             // Section click-to-scroll events for the main dashboard
             document.querySelectorAll('#main-dashboard-view section[id]').forEach(section => {
                 section.style.cursor = 'pointer';
@@ -1678,6 +2267,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.updateDashboard(data.live_analytics, "Overall");
                 });
             });
+=======
+            // Cycle candidates button
+            const cycleButton = document.getElementById('cycleCandidates');
+            if (cycleButton) {
+                cycleButton.addEventListener('click', () => this.cycleCandidates());
+            }
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         }
 
         cycleCandidates() {
@@ -1792,6 +2388,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         init3DVisualization() {
             const container = document.getElementById('threejs-container');
+<<<<<<< HEAD
             if (!container || !window.THREE) return;
 
             // Scene setup
@@ -2133,4 +2730,105 @@ document.addEventListener('DOMContentLoaded', () => {
     const connectionManager = new ConnectionManager();
     const app = new VotingAnalyticsApp();
     window.chartManager = app.chartManager; // Make it globally accessible for theme updates
+=======
+            if (!container) return;
+            
+            // Basic 3D scene setup (simplified)
+            try {
+                // This would contain the Three.js 3D visualization code
+                // For now, just add a placeholder
+                container.innerHTML = '<div class="text-center p-5"><h4 class="text-avalanche-blue">3D Visualization Loading...</h4><p class="text-muted">Interactive vote visualization will appear here</p></div>';
+                
+                // Load 3D data from backend
+                this.load3DData();
+            } catch (error) {
+                console.error('3D visualization initialization failed:', error);
+            }
+        }
+        
+        async load3DData() {
+            try {
+                const data = await this.apiService.get3DVisualizationData();
+                if (data.constituencies && data.particles) {
+                    console.log('3D visualization data loaded:', data.constituencies.length, 'constituencies');
+                    // Process 3D data here
+                }
+            } catch (error) {
+                console.error('Failed to load 3D visualization data:', error);
+            }
+        }
+        
+        showSuccessToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification success';
+            toast.innerHTML = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #00D4AA;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 9999;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        handleInitializationError(error) {
+            console.error('Application failed to initialize:', error);
+            
+            connectionManager.updateConnectionStatus('disconnected');
+            connectionManager.hideLoading();
+            
+            // Show error message to user
+            const errorContainer = document.createElement('div');
+            errorContainer.className = 'alert alert-warning m-3';
+            errorContainer.innerHTML = `
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Connection Issue</h6>
+                <p>Unable to connect to the backend server. Running in demo mode with sample data.</p>
+                <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">Retry Connection</button>
+            `;
+            
+            const container = document.querySelector('.container-fluid');
+            if (container) {
+                container.insertBefore(errorContainer, container.firstChild);
+            }
+            
+            // Load fallback data
+            this.loadFallbackData();
+        }
+    }
+    
+    // ===============================================
+    // APPLICATION INITIALIZATION
+    // ===============================================
+    
+    // Initialize managers
+    const connectionManager = new ConnectionManager();
+    const chartManager = new ChartManager();
+    
+    // Make globally available
+    window.chartManager = chartManager;
+    window.connectionManager = connectionManager;
+    
+    // Show initial loading
+    connectionManager.showLoading('Initializing Avalanche Analytics...');
+    
+    // Start the application
+    const app = new VotingAnalyticsApp();
+    
+    // Simulate connection process
+    setTimeout(() => {
+        connectionManager.updateConnectionStatus('connected');
+    }, 3000);
+    
+    console.log('Avalanche Voting Analytics - Enhanced System Ready!');
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
 });

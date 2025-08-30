@@ -30,12 +30,20 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Any
 import random
+<<<<<<< HEAD
 import uuid
 import logging
 
 # Import existing and enhanced agents
 from enhanced_llm_agent import EnhancedLLMElectionAgent, AIInsight, InsightType
 from blockchain_voting_analyzer import BlockchainVotingAnalyzer
+=======
+import threading
+import uuid
+
+# Import existing and enhanced agents
+from enhanced_llm_agent import EnhancedLLMElectionAgent, AIInsight, InsightType
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'avalanche-voting-ai-hackathon-2024'
@@ -612,6 +620,7 @@ def get_constituencies():
 
 @app.route('/api/analysis/constituency/<constituency_name>', methods=['GET'])
 def get_constituency_analysis(constituency_name):
+<<<<<<< HEAD
     """Generate a full, detailed analysis report for a specific constituency."""
     try:
         # Ensure the main demographic data is loaded
@@ -658,6 +667,119 @@ def get_constituency_analysis(constituency_name):
         }), 500
 
 
+=======
+    """Get detailed analysis for a specific constituency."""
+    try:
+        if analytics.llm_agent.demographic_df is None:
+            return jsonify({
+                "success": False,
+                "error": "No demographic data available"
+            }), 404
+        
+        # Filter data for the specific constituency
+        constituency_data = analytics.llm_agent.demographic_df[
+            analytics.llm_agent.demographic_df['ac_name'] == constituency_name
+        ]
+        
+        if len(constituency_data) == 0:
+            return jsonify({
+                "success": False,
+                "error": f"No data found for constituency: {constituency_name}"
+            }), 404
+        
+        # Generate constituency-specific insights
+        insights = []
+        
+        # Overview insight
+        total_candidates = len(constituency_data)
+        total_votes = constituency_data['total'].sum()
+        years_covered = sorted(constituency_data['year'].unique().tolist())
+        
+        insights.append({
+            "title": f"{constituency_name} Overview",
+            "description": f"This constituency has {total_candidates} candidates across {len(years_covered)} election years ({', '.join(map(str, years_covered))}), with a total of {total_votes:,} votes recorded.",
+            "confidence": 0.95,
+            "importance": 9
+        })
+        
+        # Age group analysis for constituency
+        age_groups = {
+            "18-25": constituency_data[(constituency_data['age'] >= 18) & (constituency_data['age'] <= 25)],
+            "26-35": constituency_data[(constituency_data['age'] >= 26) & (constituency_data['age'] <= 35)],
+            "36-50": constituency_data[(constituency_data['age'] >= 36) & (constituency_data['age'] <= 50)],
+            "50+": constituency_data[constituency_data['age'] > 50]
+        }
+        
+        age_data = {}
+        for group, data in age_groups.items():
+            if len(data) > 0:
+                group_votes = data['total'].sum()
+                percentage = (group_votes / total_votes) * 100 if total_votes > 0 else 0
+                age_data[group] = {
+                    "votes": int(group_votes),
+                    "percentage": round(percentage, 2),
+                    "candidates": len(data)
+                }
+        
+        if age_data:
+            dominant_age_group = max(age_data.keys(), key=lambda x: age_data[x]['percentage'])
+            insights.append({
+                "title": f"Age Group Patterns in {constituency_name}",
+                "description": f"In {constituency_name}, the {dominant_age_group} age group dominates with {age_data[dominant_age_group]['percentage']}% of votes, representing {age_data[dominant_age_group]['candidates']} candidates.",
+                "confidence": 0.88,
+                "importance": 8,
+                "data_points": age_data
+            })
+        
+        # Gender analysis for constituency
+        gender_data = constituency_data.groupby('sex')['total'].agg(['sum', 'count']).reset_index()
+        gender_insights = {}
+        
+        for _, row in gender_data.iterrows():
+            gender = row['sex']
+            votes = int(row['sum'])
+            percentage = (votes / total_votes) * 100 if total_votes > 0 else 0
+            
+            gender_insights[gender] = {
+                "votes": votes,
+                "percentage": round(percentage, 2),
+                "candidates": int(row['count'])
+            }
+        
+        if len(gender_insights) >= 2:
+            insights.append({
+                "title": f"Gender Distribution in {constituency_name}",
+                "description": f"Gender representation in {constituency_name} shows varied participation across different demographics, providing insights into local political engagement patterns.",
+                "confidence": 0.90,
+                "importance": 7,
+                "data_points": gender_insights
+            })
+        
+        return jsonify({
+            "success": True,
+            "constituency_name": constituency_name,
+            "insights": insights,
+            "chart_data": {
+                "age_distribution": age_data,
+                "gender_distribution": gender_insights
+            },
+            "summary": {
+                "total_candidates": total_candidates,
+                "total_votes": int(total_votes),
+                "years_covered": years_covered,
+                "age_groups_analyzed": len(age_data),
+                "gender_groups_analyzed": len(gender_insights)
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "message": f"Failed to analyze constituency: {constituency_name}"
+        }), 500
+
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
 # Enhanced WebSocket Events
 @socketio.on('connect')
 def handle_connect():
@@ -674,8 +796,11 @@ def handle_connect():
         'network': analytics.avalanche_network,
         'timestamp': datetime.now().isoformat()
     })
+<<<<<<< HEAD
     # Send initial data snapshot immediately on connection
     handle_live_data_request()
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
 
 @socketio.on('request_ai_analysis')
 def handle_ai_analysis_request():
@@ -882,6 +1007,7 @@ def get_3d_visualization_data():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+<<<<<<< HEAD
 @app.route('/api/analytics/historical-votes')
 def get_historical_votes():
     """Get historical vote totals for each year."""
@@ -910,6 +1036,8 @@ def get_historical_votes():
         app.logger.error(f"Error in get_historical_votes: {e}", exc_info=True)
         return jsonify({"success": False, "error": "Failed to calculate historical votes."}, 500)
 
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
 @app.route('/api/blockchain/network-stats')
 def get_enhanced_network_stats():
     """Get enhanced Avalanche network statistics."""
@@ -944,6 +1072,7 @@ def get_enhanced_network_stats():
 # FRONTEND ROUTES (Serve HTML, CSS, JS files)
 # ===============================================
 
+<<<<<<< HEAD
 @app.route('/api/ping')
 def ping():
     """A simple test route to confirm the server is loading new code."""
@@ -985,6 +1114,8 @@ def serve_report_chart(path):
     """Serve images from the analysis_output directory and its subdirectories."""
     return send_from_directory('analysis_output', path)
 
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
 @app.route('/')
 def serve_frontend():
     """Serve the main frontend HTML file."""
@@ -1006,6 +1137,7 @@ def enhanced_background_simulation():
 # Start enhanced background simulation
 def start_enhanced_simulation():
     """Start the enhanced background simulation."""
+<<<<<<< HEAD
     socketio.start_background_task(target=enhanced_background_simulation)
 
 if __name__ == '__main__':
@@ -1013,6 +1145,12 @@ if __name__ == '__main__':
     log = logging.getLogger('eventlet.wsgi')
     log.setLevel(logging.ERROR)
 
+=======
+    simulation_thread = threading.Thread(target=enhanced_background_simulation, daemon=True)
+    simulation_thread.start()
+
+if __name__ == '__main__':
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
     print("🏔️ AVALANCHE VOTING ANALYTICS - TIER 1 ENHANCED SYSTEM")
     print("=" * 80)
     print("🔥 TIER 1 FEATURES ACTIVE:")
@@ -1021,17 +1159,57 @@ if __name__ == '__main__':
     print("   ✅ 3D Interactive Vote Visualization")
     print("   ✅ Dark/Light Theme with Avalanche Branding")
     print("=" * 80)
+<<<<<<< HEAD
+=======
+    print("🔗 Enhanced API Endpoints:")
+    print("   GET  /api/health                     - Enhanced health check")
+    print("   GET  /api/ai/insights               - Real-time AI insights")
+    print("   GET  /api/ai/predictions            - AI-powered predictions")
+    print("   GET  /api/ai/predictions/live       - Live AI predictions")
+    print("   GET  /api/blockchain/transactions   - Blockchain transactions")
+    print("   GET  /api/live/transactions         - Live transaction feed")
+    print("   GET  /api/visualization/3d          - 3D visualization data")
+    print("   GET  /api/blockchain/network-stats  - Enhanced network stats")
+    print("   GET  /api/analytics/enhanced        - Complete enhanced analytics")
+    print("   POST /api/election/start-enhanced   - Start enhanced demo")
+    print("   POST /api/election/stop-enhanced    - Stop enhanced demo")
+    print("🌐 Enhanced WebSocket Events:")
+    print("   connect, disconnect, request_live_data, request_3d_data")
+    print("   blockchain_feed_update, prediction_update, vote_update")
+    print("   new_transaction, vote_count_update, visualization_data")
+    print("⛓️ Blockchain Integration:")
+    print(f"   Network: {analytics.avalanche_network}")
+    print(f"   Contract: {analytics.smart_contract_address}")
+    print(f"   Live Transactions: {len(analytics.blockchain_events)}")
+    print("🤖 AI Features:")
+    print("   Enhanced LLM reasoning, Live predictions, Anomaly detection")
+    print("   Real-time confidence scoring, Pattern recognition")
+    print("🎨 Frontend Features:")
+    print("   Avalanche branding, Theme switching, 3D globe visualization")
+    print("   Live blockchain feed, Animated charts, Glass morphism UI")
+    print("=" * 80)
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
     
     # Start all background services
     print("🚀 Starting background services...")
     start_enhanced_simulation()
     print("✅ All services started successfully!")
+<<<<<<< HEAD
     print("🌐 Server starting on: http://localhost:8080")
+=======
+    print("🌐 Frontend URL: http://localhost:5000")
+    print("📡 WebSocket URL: http://localhost:5000")
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
     print("=" * 80)
     
     # Run the enhanced Flask-SocketIO app
     socketio.run(app, 
                  host='0.0.0.0', 
+<<<<<<< HEAD
                  port=8080,
                  debug=False,
+=======
+                 port=5000,
+                 debug=False,  # Set to False for stability
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                  allow_unsafe_werkzeug=True)

@@ -13,7 +13,10 @@ import os
 import sys
 import subprocess
 import time
+<<<<<<< HEAD
 import logging
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
 
 def check_dependencies():
     """Check if all required dependencies are installed."""
@@ -37,10 +40,13 @@ def check_dependencies():
 
 def start_server():
     """Start the Avalanche Voting Analytics server."""
+<<<<<<< HEAD
     # Suppress harmless connection reset errors
     log = logging.getLogger('eventlet.wsgi')
     log.setLevel(logging.ERROR)
 
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
     try:
         # Import and run the enhanced API
         from enhanced_ai_api import app, socketio, analytics, start_enhanced_simulation

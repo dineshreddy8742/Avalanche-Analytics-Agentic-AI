@@ -19,8 +19,11 @@ Built for blockchain-based voting platforms with complete transparency.
 
 import pandas as pd
 import numpy as np
+<<<<<<< HEAD
 import matplotlib
 matplotlib.use('Agg') # Use non-interactive backend for server environments
+=======
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
 import matplotlib.pyplot as plt
 import seaborn as sns
 import json
@@ -182,6 +185,7 @@ class BlockchainVotingAnalyzer:
         
         # Vote counts per candidate
         candidate_votes = self.voting_data['candidate_voted'].value_counts()
+<<<<<<< HEAD
         
         if candidate_votes.empty:
             results = {
@@ -197,10 +201,17 @@ class BlockchainVotingAnalyzer:
         
         # Calculate percentages
         candidate_percentages = (candidate_votes / total_votes * 100).round(2) if total_votes > 0 else candidate_votes
+=======
+        total_votes = len(self.voting_data)
+        
+        # Calculate percentages
+        candidate_percentages = (candidate_votes / total_votes * 100).round(2)
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         
         # Identify winner and margin
         winner = candidate_votes.index[0]
         winner_votes = candidate_votes.iloc[0]
+<<<<<<< HEAD
         
         if len(candidate_votes) > 1:
             runner_up = candidate_votes.index[1]
@@ -213,6 +224,12 @@ class BlockchainVotingAnalyzer:
             margin = winner_votes
             margin_percentage = 100.0
 
+=======
+        runner_up_votes = candidate_votes.iloc[1] if len(candidate_votes) > 1 else 0
+        margin = winner_votes - runner_up_votes
+        margin_percentage = (margin / total_votes * 100).round(2)
+        
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         results = {
             "candidate_votes": candidate_votes.to_dict(),
             "candidate_percentages": candidate_percentages.to_dict(),
@@ -220,26 +237,44 @@ class BlockchainVotingAnalyzer:
             "winner": {
                 "name": winner,
                 "votes": int(winner_votes),
+<<<<<<< HEAD
                 "percentage": float(candidate_percentages.iloc[0]) if not candidate_percentages.empty else 0,
+=======
+                "percentage": float(candidate_percentages.iloc[0]),
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                 "margin_votes": int(margin),
                 "margin_percentage": float(margin_percentage)
             },
             "runner_up": {
+<<<<<<< HEAD
                 "name": runner_up,
                 "votes": int(runner_up_votes),
                 "percentage": float(candidate_percentages.iloc[1]) if len(candidate_percentages) > 1 else 0
+=======
+                "name": candidate_votes.index[1] if len(candidate_votes) > 1 else "None",
+                "votes": int(runner_up_votes),
+                "percentage": float(candidate_percentages.iloc[1]) if len(candidate_votes) > 1 else 0
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
             }
         }
         
         self.analysis_results["candidate_results"] = results
         
         # Generate insights
+<<<<<<< HEAD
         if not candidate_percentages.empty:
             self.insights.append(f"🏆 {winner} is leading with {candidate_percentages.iloc[0]}% of total votes ({winner_votes:,} votes).")
             if len(candidate_votes) > 1:
                 self.insights.append(f"📈 Margin of victory: {margin:,} votes ({margin_percentage}% of total votes).")
         
         print(f"✅ Winner: {winner} with {winner_votes:,} votes ({candidate_percentages.iloc[0] if not candidate_percentages.empty else 0}%)")
+=======
+        self.insights.append(f"🏆 {winner} is leading with {candidate_percentages.iloc[0]}% of total votes ({winner_votes:,} votes).")
+        if len(candidate_votes) > 1:
+            self.insights.append(f"📈 Margin of victory: {margin:,} votes ({margin_percentage}% of total votes).")
+        
+        print(f"✅ Winner: {winner} with {winner_votes:,} votes ({candidate_percentages.iloc[0]}%)")
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         
         return results
     

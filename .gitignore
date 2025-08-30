@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Environments
 .venv/
 __pycache__/
@@ -7,3 +8,38 @@ __pycache__/
 build/
 dist/
 *.spec
+=======
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*build/
+*dist/
+*.egg-info/
+*.spec
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# Node.js
+node_modules/
+
+# Secrets
+.env
+
+# Generated files
+analysis_output/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+>>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
