@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 Flask==2.3.3
 Flask-CORS==4.0.0
 Flask-SocketIO==5.3.6
@@ -12,22 +12,10 @@ python-socketio==5.11.4
 requests==2.32.3
 python-dateutil==2.9.0.post0
 gunicorn==22.0.0
-=======
-pandas
-numpy
-matplotlib
-seaborn
-requests
-flask
-flask-cors
-flask-socketio
-eventlet
-gunicorn
-python-decouple
-web3
-websockets
-paho-mqtt
-uvicorn
-fastapi
-google-cloud-aiplatform
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+python-decouple==3.8
+web3==6.11.5
+websockets==12.0
+paho-mqtt==1.6.1
+uvicorn==0.30.1
+fastapi==0.112.0
+google-cloud-aiplatform==1.70.0
