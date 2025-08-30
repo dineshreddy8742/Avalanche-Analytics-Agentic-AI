@@ -1,0 +1,17 @@
+pandas
+numpy
+matplotlib
+seaborn
+requests
+flask
+flask-cors
+flask-socketio
+eventlet
+gunicorn
+python-decouple
+web3
+websockets
+paho-mqtt
+uvicorn
+fastapi
+google-cloud-aiplatform
