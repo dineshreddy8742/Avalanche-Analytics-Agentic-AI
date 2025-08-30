@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' https://cdn.socket.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+        style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline';
+        font-src 'self' http://localhost:8080 https://cdnjs.cloudflare.com https://fonts.gstatic.com;
+        img-src 'self' https://raw.githubusercontent.com data:;
+        connect-src 'self' ws://localhost:8080 wss://localhost:8080;
+    ">
+    <link rel="icon" href="data:,">
+    <title>Avalanche Voting Analytics | Web3 Election Platform</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Three.js for 3D Visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Socket.IO for Real-time Updates -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for Enhanced Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="theme-light">
+    <header class="fixed-top">
+        <!-- Main Navigation Bar -->
+        <nav class="navbar navbar-expand-lg avalanche-nav">
+            <div class="container-fluid">
+                                        <a class="avalanche-brand" href="#">
+                            <i class="fas fa-project-diagram avalanche-icon"></i>
+                            <div>
+                                <span class="brand-text">Avalanche</span>
+                                <span class="brand-sub">Voting Analytics</span>
+                            </div>
+                        </a>
+                <div class="header-right-controls d-flex align-items-center">
+                    <!-- Constituency Search Bar -->
+                    <div class="search-container me-3">
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control search-input" 
+                                   placeholder="Search constituencies..." 
+                                   id="constituencySearch"
+                                   autocomplete="off">
+                            <button class="btn btn-avalanche" type="button" id="searchButton">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="search-results position-absolute w-100" id="searchResults"></div>
+                    </div>
+                    <!-- Theme Toggle -->
+                    <button class="btn btn-outline-light me-3 hover-glow-blue" id="themeToggle" title="Toggle Theme">
+                        <i class="fas fa-sun rotate-slow" id="themeIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Live Status & Blockchain Feed Bar -->
+        <div class="blockchain-feed">
+            <div class="container-fluid d-flex justify-content-between align-items-center h-100">
+                <div class="feed-status-left d-flex align-items-center">
+                    <div class="live-status me-4">
+                        <span class="status-dot pulse-fast"></span>
+                        <span class="status-text gradient-text-rainbow">LIVE</span>
+                    </div>
+                    <div class="ai-status">
+                        <span class="ai-pulse"></span>AI MONITORING
+                    </div>
+                </div>
+                <div class="feed-status-right d-flex align-items-center">
+                    <i class="fas fa-cube me-2 pulse-slow"></i>
+                    <span class="gradient-text-primary me-3">Live Avalanche Transactions</span>
+                    <div class="network-stats">
+                        <span class="stat-item">TPS: <span id="tps-counter">2.1k</span></span>
+                        <span class="stat-item">Gas: <span id="gas-price">0.025 AVAX</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+        <main class="container-fluid" id="main-dashboard-view">
+        <!-- Transaction Feed Content -->
+        <div class="feed-content-wrapper">
+            <div class="feed-content" id="transactionFeed">
+                <!-- Live transactions will appear here -->
+            </div>
+        </div>
+
+        <!-- Constituency Header -->
+        <div id="constituency-header" class="d-none mb-4 text-center">
+            <h4 id="constituency-header-name" class="section-title-dynamic"></h4>
+            <button id="back-to-overall" class="btn btn-rainbow mt-2">Back to Overall Analytics</button>
+        </div>
+
+            <!-- Hero Section with AI Predictions -->
+            <section class="hero-section mb-5">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="hero-card">
+                            <div class="hero-header">
+                                <h1 class="hero-title gradient-text-rainbow">
+                                    <i class="fas fa-robot me-3 rotate-slow"></i>
+                                    AI Agent-Powered Election Analytics
+                                </h1>
+                                <p class="hero-subtitle">Real-time blockchain voting analysis powered by Avalanche</p>
+                            </div>
+                            <div class="prediction-panel">
+                                <div class="prediction-header">
+                                    <i class="fas fa-crystal-ball me-2 pulse-slow"></i>
+                                    <span class="gradient-text-primary">Live AI Predictions</span>
+                                    <div class="confidence-meter ms-auto">
+                                        <span>Confidence:</span>
+                                        <div class="meter">
+                                            <div class="meter-fill" id="confidenceMeter"></div>
+                                        </div>
+                                        <span id="confidenceText">87%</span>
+                                    </div>
+                                </div>
+                                <div class="prediction-content" id="livePredicton">
+                                    <div class="prediction-item">
+                                        <span class="prediction-text">AI is predicting Candidate A will win with 67.2% probability</span>
+                                        <div class="prediction-graph">
+                                            <canvas id="predictionChart" width="200" height="60"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="stats-grid">
+                            <div class="stat-card avalanche-red" data-stat="total-votes">
+                                <div class="stat-icon">
+                                    <i class="fas fa-vote-yea"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h3 id="total-votes" class="text-primary">Loading...</h3>
+                                    <p class="text-secondary">Total Votes</p>
+                                </div>
+                            </div>
+                            <div class="stat-card avalanche-blue" data-stat="total-insights">
+                                <div class="stat-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h3 id="total-insights" class="text-primary">-</h3>
+                                    <p class="text-secondary">AI Insights</p>
+                                </div>
+                            </div>
+                            <div class="stat-card avalanche-orange" data-stat="avg-confidence">
+                                <div class="stat-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h3 id="avg-confidence" class="text-primary">-</h3>
+                                    <p class="text-secondary">Avg Confidence</p>
+                                </div>
+                            </div>
+                            <div class="stat-card avalanche-green" data-stat="high-importance">
+                                <div class="stat-icon">
+                                    <i class="fas fa-shield-check"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h3 id="high-importance" class="text-primary">-</h3>
+                                    <p class="text-secondary">High Priority</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3D Visualization Section -->
+            <section id="visualization-section-id" class="mb-5">
+                <div class="card glass-effect">
+                    <div class="card-header avalanche-gradient">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-globe me-3"></i>
+                            <h2 class="mb-0 section-title-dynamic">3D Interactive Vote Visualization</h2>
+                            <div class="view-controls ms-auto">
+                                <button class="btn btn-sm btn-rainbow me-2 hover-glow-blue" id="viewGlobeBtn">Globe</button>
+                                <button class="btn btn-sm btn-avalanche me-2 hover-glow-green" id="viewMapBtn">Map</button>
+                                <button class="btn btn-sm btn-pulse hover-glow-red" id="viewParticlesBtn">Particles</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="visualization-container">
+                            <div id="threejs-container"></div>
+                            <div id="globe-tooltip"></div>
+                            <div class="visualization-overlay">
+                                <div class="vote-counter">
+                                    <div class="counter-item">
+                                        <span class="counter-number gradient-text-rainbow" id="liveVoteCount">0</span>
+                                        <span class="counter-label text-avalanche-cyan">Live Votes</span>
+                                    </div>
+                                    <div class="counter-item">
+                                        <span class="counter-number gradient-text-secondary" id="participationRate">0%</span>
+                                        <span class="counter-label text-avalanche-purple">Participation</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Enhanced Candidate Results -->
+            <section id="candidate-results" class="mb-5">
+                <div class="card glass-effect">
+                    <div class="card-header avalanche-gradient text-white bg-animated-rainbow">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-trophy me-3 pulse-fast"></i>
+                            <h2 class="mb-0 section-title-dynamic">Candidate Results</h2>
+                            <button class="btn btn-sm btn-light ms-auto" id="cycleCandidates">
+                                <i class="fas fa-sync-alt me-1"></i>Cycle Candidates
+                            </button>
+                            <div class="real-time-indicator ms-2">
+                                <span class="pulse-dot status-online"></span>
+                                <span class="gradient-text-secondary">Real-time</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="chart-card">
+                                    <h5 class="chart-title gradient-text-primary">
+                                        <i class="fas fa-chart-bar me-2 text-avalanche-cyan"></i>
+                                        Votes Per Candidate
+                                    </h5>
+                                    <div class="chart-container">
+                                        <canvas id="votesPerCandidateChart"></canvas>
+                                    </div>
+                                    <div class="chart-description">A real-time count of votes for each candidate.</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="chart-card">
+                                    <h5 class="chart-title">
+                                        <i class="fas fa-chart-pie me-2"></i>
+                                        Vote Percentage Share
+                                    </h5>
+                                    <div class="chart-container">
+                                        <canvas id="votePercentageShareChart"></canvas>
+                                    </div>
+                                    <div class="chart-description">The percentage of the total vote each candidate holds.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 narrative-section" id="candidate-narrative">
+                            <!-- AI-powered narrative insights -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Enhanced Demographics Section -->
+            <section id="demographic-analytics" class="mb-5">
+                <div class="card glass-effect">
+                    <div class="card-header avalanche-gradient text-white">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users me-3"></i>
+                            <h2 class="mb-0 section-title-dynamic">Demographic Analytics</h2>
+                            <div class="analytics-badge ms-auto">
+                                <i class="fas fa-robot me-1"></i>
+                                AI Powered
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <div class="chart-card">
+                                    <h5 class="chart-title">
+                                        <i class="fas fa-birthday-cake me-2"></i>
+                                        Age Distribution
+                                    </h5>
+                                    <div class="chart-container">
+                                        <canvas id="ageGroupDistributionChart"></canvas>
+                                    </div>
+                                    <div class="chart-description">How votes are distributed across different age groups.</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="chart-card">
+                                    <h5 class="chart-title">
+                                        <i class="fas fa-venus-mars me-2"></i>
+                                        Gender Trends
+                                    </h5>
+                                    <div class="chart-container">
+                                        <canvas id="genderVotingTrendsChart"></canvas>
+                                    </div>
+                                    <div class="chart-description">Voting patterns based on gender demographics.</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="chart-card">
+                                    <h5 class="chart-title">
+                                        <i class="fas fa-map-marker-alt me-2"></i>
+                                        Top Locations
+                                    </h5>
+                                    <div class="chart-container">
+                                        <canvas id="locationParticipationChart"></canvas>
+                                    </div>
+                                    <div class="chart-description">Top constituencies by voter participation.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 narrative-section" id="demographic-narrative">
+                            <!-- AI-powered demographic insights -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Historical Vote Trend Analysis -->
+            <section id="historical-analysis-section" class="mb-5">
+                <div class="card glass-effect">
+                    <div class="card-header avalanche-gradient text-white">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-chart-line me-3"></i>
+                            <h2 class="mb-0 section-title-dynamic">Historical Vote Trend</h2>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="historicalVotesChart"></canvas>
+                        </div>
+                        <div class="chart-description text-center mt-3">This chart shows the total votes cast over different election years, indicating trends in voter participation.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI Insights Hub -->
+            <section id="comprehensive-analysis" class="mb-5">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <section id="other-insights" class="mb-5">
+                            <div class="card glass-effect h-100">
+                                <div class="card-header avalanche-gradient text-white">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-brain me-3"></i>
+                                        <h2 class="mb-0 section-title-dynamic">AI Intelligence Hub</h2>
+                                        <div class="ai-status ms-auto">
+                                            <span class="ai-pulse"></span>
+                                            <span>AI Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="other-insights-content">
+                                    <!-- AI insights with enhanced visualization -->
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Voter Turnout Hotspots (Heatmap) -->
+            <section id="heatmap-section" class="mb-5">
+                <div class="card glass-effect">
+                    <div class="card-header avalanche-gradient text-white">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-fire me-3"></i>
+                            <h2 class="mb-0 section-title-dynamic">Voter Turnout Hotspots</h2>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 450px;">
+                            <canvas id="turnoutHeatmapChart"></canvas>
+                        </div>
+                        <div class="chart-description text-center mt-3">This chart shows constituencies with the highest voter turnout. The size and color of each bubble represent the total number of votes.</div>
+                    </div>
+                </div>
+            </section>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="avalanche-loader">
+            <div class="loader-mountain"></div>
+            <div class="loader-text">Loading Analytics...</div>
+            <div class="dots-loader">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="progress-rainbow">
+                <div class="progress-rainbow-fill" id="loadingProgress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Enhanced JavaScript -->
+    <script src="script.js"></script>
+
+
+    <!-- Connection Status Indicator -->
+    <div class="connection-status connecting" id="connectionStatus">
+        <span>CONNECTING...</span>
+    </div>
+
+    <footer class="footer">
+        <div class="container-fluid">
+            <p>&copy; 2025 Geeks Squad. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Stat Detail Modal -->
+    <div class="modal fade" id="statDetailModal" tabindex="-1" aria-labelledby="statDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-effect">
+                <div class="modal-header avalanche-gradient">
+                    <h5 class="modal-title" id="statDetailModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="statDetailModalBody">
+                    <!-- Detailed content will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

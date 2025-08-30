@@ -1,0 +1,136 @@
+{
+  "election_analysis": {
+    "metadata": {
+      "analysis_timestamp": "2025-08-31T00:20:31.966570",
+      "total_votes": 36,
+      "total_candidates": 18,
+      "analyzer_version": "AI Blockchain Voting Analyzer v1.0"
+    },
+    "candidate_results": {
+      "candidate_votes": {
+        "VENKATA RAMARAO. GARIMELLA": 2,
+        "VALLABHANENI. NAGA PAVAN KUMAR (NANI)": 2,
+        "BORRA KIRAN": 2,
+        "VASANTHA VENKATA KRISHNA PRASAD": 2,
+        "UMA MAHESWARARAO DEVINENI": 2,
+        "BALA KOTESWARARAO NUTULAPATI": 2,
+        "AKKALA RAMA MOHANRAO (GANDHI)": 2,
+        "PERAM SIVA NAGESWARARAO": 2,
+        "ERRAGUNTA RAJA RAO": 2,
+        "VENKATA KRISHNA RAO": 2,
+        "KRISHNA PRASAD PONNAGANTI": 2,
+        "KOLLI SAIDA RAO": 2,
+        "PRATHI SAI DASARADHI": 2,
+        "MANDAVA SUBBARAO": 2,
+        "MAGANTI VENKATA RAMA RAO": 2,
+        "SHAREEF SHAIK.": 2,
+        "RAYALA NARASIMHA RAO": 2,
+        "NAGARAJU GUDIWADA": 2
+      },
+      "candidate_percentages": {
+        "VENKATA RAMARAO. GARIMELLA": 5.56,
+        "VALLABHANENI. NAGA PAVAN KUMAR (NANI)": 5.56,
+        "BORRA KIRAN": 5.56,
+        "VASANTHA VENKATA KRISHNA PRASAD": 5.56,
+        "UMA MAHESWARARAO DEVINENI": 5.56,
+        "BALA KOTESWARARAO NUTULAPATI": 5.56,
+        "AKKALA RAMA MOHANRAO (GANDHI)": 5.56,
+        "PERAM SIVA NAGESWARARAO": 5.56,
+        "ERRAGUNTA RAJA RAO": 5.56,
+        "VENKATA KRISHNA RAO": 5.56,
+        "KRISHNA PRASAD PONNAGANTI": 5.56,
+        "KOLLI SAIDA RAO": 5.56,
+        "PRATHI SAI DASARADHI": 5.56,
+        "MANDAVA SUBBARAO": 5.56,
+        "MAGANTI VENKATA RAMA RAO": 5.56,
+        "SHAREEF SHAIK.": 5.56,
+        "RAYALA NARASIMHA RAO": 5.56,
+        "NAGARAJU GUDIWADA": 5.56
+      },
+      "total_votes": 36,
+      "winner": {
+        "name": "VENKATA RAMARAO. GARIMELLA",
+        "votes": 2,
+        "percentage": 5.56,
+        "margin_votes": 0,
+        "margin_percentage": 0.0
+      },
+      "runner_up": {
+        "name": "VALLABHANENI. NAGA PAVAN KUMAR (NANI)",
+        "votes": 2,
+        "percentage": 5.56
+      }
+    },
+    "demographic_analysis": {
+      "age_groups": {
+        "counts": {
+          "36-50": 18,
+          "50+": 12,
+          "26-35": 6,
+          "18-25": 0
+        },
+        "percentages": {
+          "36-50": 50.0,
+          "50+": 33.33,
+          "26-35": 16.67,
+          "18-25": 0.0
+        },
+        "dominant_group": "36-50",
+        "dominant_percentage": 50.0
+      },
+      "gender": {
+        "counts": {
+          "Male": 36
+        },
+        "percentages": {
+          "Male": 100.0
+        },
+        "male_percentage": 100.0,
+        "female_percentage": 0.0
+      },
+      "locations": {
+        "top_10_counts": {
+          "Mylavaram": 36
+        },
+        "top_10_percentages": {
+          "Mylavaram": 100.0
+        },
+        "highest_turnout_location": "Mylavaram",
+        "highest_turnout_count": 36,
+        "highest_turnout_percentage": 100.0
+      }
+    },
+    "narrative_insights": [
+      "\ud83c\udfc6 VENKATA RAMARAO. GARIMELLA is leading with 5.56% of total votes (2 votes).",
+      "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
+      "\ud83d\udc66 Most voters were in the 36-50 age group (50.0%).",
+      "\ud83c\udfd9\ufe0f Mylavaram had the highest turnout with 36 votes (100.0%).",
+      "\ud83d\uddf3\ufe0f Election Overview: 36 total votes cast across 18 candidates.",
+      "\ud83d\udd25 This was a highly competitive election with a narrow victory margin.",
+      "\ud83d\udcca Age Analysis: 36-50 voters drove the election outcome, representing 50.0% of the electorate.",
+      "\ud83d\udcc8 Male voters showed higher participation in this election.",
+      "\u23f0 Analysis completed on 2025-08-31 00:20:31",
+      "\u2705 All voting data has been verified and analyzed using AI-powered algorithms."
+    ],
+    "visualizations": {
+      "charts_created": 5,
+      "chart_files": [
+        "votes_per_candidate.png",
+        "vote_percentage_share.png",
+        "age_group_distribution.png",
+        "location_participation.png",
+        "gender_distribution.png"
+      ]
+    },
+    "summary": {
+      "winner": "VENKATA RAMARAO. GARIMELLA",
+      "winning_percentage": 5.56,
+      "margin_of_victory": 0.0,
+      "key_insights": [
+        "\ud83c\udfc6 VENKATA RAMARAO. GARIMELLA is leading with 5.56% of total votes (2 votes).",
+        "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
+        "\ud83d\udc66 Most voters were in the 36-50 age group (50.0%)."
+      ]
+    }
+  }
+}

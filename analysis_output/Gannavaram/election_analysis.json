@@ -1,0 +1,151 @@
+{
+  "election_analysis": {
+    "metadata": {
+      "analysis_timestamp": "2025-08-30T21:56:54.723990",
+      "total_votes": 48,
+      "total_candidates": 24,
+      "analyzer_version": "AI Blockchain Voting Analyzer v1.0"
+    },
+    "candidate_results": {
+      "candidate_votes": {
+        "MAKEY DAVY PRASAD": 2,
+        "RAVI KUMAR BEERA": 2,
+        "Vamsi Vallabhaneni": 2,
+        "Damarla Koteswararao": 2,
+        "Veera Bhadra Prasad Sunkara": 2,
+        "Afsar Syed": 2,
+        "Changantipati Gandhi": 2,
+        "Yarlagadda Venkataramaiah Chowdary": 2,
+        "Ajay Kumar Ghosh Annam": 2,
+        "Addanki Amos": 2,
+        "Dasari Bhagyalakshmi": 2,
+        "Kalaparthi Bhaskararao": 2,
+        "Sudheer Kumar Gudapati": 2,
+        "Kolli Brahmarao": 2,
+        "Surapaneni Ramakrishna": 2,
+        "CHINNAM RAMESH BABU": 2,
+        "K. SURENDRA": 2,
+        "MULAPARTHI MOHANA RAO": 2,
+        "KOLLI SURYA RAO (Sudhakar)": 2,
+        "NELAPUDI STALIN BABU": 2,
+        "KONDETI CHITTI BABU": 2,
+        "PAMULA RAJESWARI DEVI": 2,
+        "MADDELA VERA VENKATA SATYANARAYANA": 2,
+        "Yarlagadda Venkatrao": 2
+      },
+      "candidate_percentages": {
+        "MAKEY DAVY PRASAD": 4.17,
+        "RAVI KUMAR BEERA": 4.17,
+        "Vamsi Vallabhaneni": 4.17,
+        "Damarla Koteswararao": 4.17,
+        "Veera Bhadra Prasad Sunkara": 4.17,
+        "Afsar Syed": 4.17,
+        "Changantipati Gandhi": 4.17,
+        "Yarlagadda Venkataramaiah Chowdary": 4.17,
+        "Ajay Kumar Ghosh Annam": 4.17,
+        "Addanki Amos": 4.17,
+        "Dasari Bhagyalakshmi": 4.17,
+        "Kalaparthi Bhaskararao": 4.17,
+        "Sudheer Kumar Gudapati": 4.17,
+        "Kolli Brahmarao": 4.17,
+        "Surapaneni Ramakrishna": 4.17,
+        "CHINNAM RAMESH BABU": 4.17,
+        "K. SURENDRA": 4.17,
+        "MULAPARTHI MOHANA RAO": 4.17,
+        "KOLLI SURYA RAO (Sudhakar)": 4.17,
+        "NELAPUDI STALIN BABU": 4.17,
+        "KONDETI CHITTI BABU": 4.17,
+        "PAMULA RAJESWARI DEVI": 4.17,
+        "MADDELA VERA VENKATA SATYANARAYANA": 4.17,
+        "Yarlagadda Venkatrao": 4.17
+      },
+      "total_votes": 48,
+      "winner": {
+        "name": "MAKEY DAVY PRASAD",
+        "votes": 2,
+        "percentage": 4.17,
+        "margin_votes": 0,
+        "margin_percentage": 0.0
+      },
+      "runner_up": {
+        "name": "RAVI KUMAR BEERA",
+        "votes": 2,
+        "percentage": 4.17
+      }
+    },
+    "demographic_analysis": {
+      "age_groups": {
+        "counts": {
+          "36-50": 32,
+          "50+": 14,
+          "26-35": 2,
+          "18-25": 0
+        },
+        "percentages": {
+          "36-50": 66.67,
+          "50+": 29.17,
+          "26-35": 4.17,
+          "18-25": 0.0
+        },
+        "dominant_group": "36-50",
+        "dominant_percentage": 66.67
+      },
+      "gender": {
+        "counts": {
+          "Male": 44,
+          "Female": 4
+        },
+        "percentages": {
+          "Male": 91.67,
+          "Female": 8.33
+        },
+        "male_percentage": 91.67,
+        "female_percentage": 8.33
+      },
+      "locations": {
+        "top_10_counts": {
+          "Gannavaram": 48
+        },
+        "top_10_percentages": {
+          "Gannavaram": 100.0
+        },
+        "highest_turnout_location": "Gannavaram",
+        "highest_turnout_count": 48,
+        "highest_turnout_percentage": 100.0
+      }
+    },
+    "narrative_insights": [
+      "\ud83c\udfc6 MAKEY DAVY PRASAD is leading with 4.17% of total votes (2 votes).",
+      "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
+      "\ud83d\udc66 Most voters were in the 36-50 age group (66.67%).",
+      "\u2696\ufe0f Gender distribution: 91.67% Male, 8.33% Female (gap: 83.3%).",
+      "\ud83c\udfd9\ufe0f Gannavaram had the highest turnout with 48 votes (100.0%).",
+      "\ud83d\uddf3\ufe0f Election Overview: 48 total votes cast across 24 candidates.",
+      "\ud83d\udd25 This was a highly competitive election with a narrow victory margin.",
+      "\ud83d\udcca Age Analysis: 36-50 voters drove the election outcome, representing 66.67% of the electorate.",
+      "\ud83d\udcc8 Male voters showed higher participation in this election.",
+      "\u23f0 Analysis completed on 2025-08-30 21:56:54",
+      "\u2705 All voting data has been verified and analyzed using AI-powered algorithms."
+    ],
+    "visualizations": {
+      "charts_created": 5,
+      "chart_files": [
+        "votes_per_candidate.png",
+        "vote_percentage_share.png",
+        "age_group_distribution.png",
+        "location_participation.png",
+        "gender_distribution.png"
+      ]
+    },
+    "summary": {
+      "winner": "MAKEY DAVY PRASAD",
+      "winning_percentage": 4.17,
+      "margin_of_victory": 0.0,
+      "key_insights": [
+        "\ud83c\udfc6 MAKEY DAVY PRASAD is leading with 4.17% of total votes (2 votes).",
+        "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
+        "\ud83d\udc66 Most voters were in the 36-50 age group (66.67%)."
+      ]
+    }
+  }
+}

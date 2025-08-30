@@ -1,0 +1,167 @@
+{
+  "election_analysis": {
+    "metadata": {
+      "analysis_timestamp": "2025-08-31T00:16:20.867319",
+      "total_votes": 64,
+      "total_candidates": 31,
+      "analyzer_version": "AI Blockchain Voting Analyzer v1.0"
+    },
+    "candidate_results": {
+      "candidate_votes": {
+        "Shaik Saleem": 4,
+        "Videla Sai Srinivas": 2,
+        "Suraboina. Murali Krishna": 2,
+        "Muppalla Nageswara Rao": 2,
+        "Alla Rama Krishna Reddy (RK)": 2,
+        "Nara Lokesh": 2,
+        "Jaggarapu Ramohan Rao": 2,
+        "Machiraju Bheema Sankara Chaitanya": 2,
+        "Velalla Sai Subramanyam": 2,
+        "Lokam Sesha Siva Bhaskara Rao": 2,
+        "Thota Siva Rama Prasad": 2,
+        "G. Prasad": 2,
+        "Jaleel.Shaik": 2,
+        "Deepala Sambhashiva Rao": 2,
+        "Vinay Kishore Merigala": 2,
+        "Saira Banu": 2,
+        "Akkisetti Sri Krishna": 2,
+        "Tamanna Simhadri": 2,
+        "Alla Radha Devi": 2,
+        "Ravuri Kishore Babu (RK)": 2,
+        "Karumanchi Ramarao": 2,
+        "Valaparla Kishore": 2,
+        "Thondamallu Vijaya Bhaskar": 2,
+        "Kosanam Srinivasa Rao": 2,
+        "Kasani Sudhakar Babu": 2,
+        "Nandipalli Srinivasa Rao": 2,
+        "Naidu Nagaraju": 2,
+        "Tariq Shaik": 2,
+        "Kammela. Suri Babu": 2,
+        "Shaik Raheem": 2,
+        "Babu Rao Itta": 2
+      },
+      "candidate_percentages": {
+        "Shaik Saleem": 6.25,
+        "Videla Sai Srinivas": 3.12,
+        "Suraboina. Murali Krishna": 3.12,
+        "Muppalla Nageswara Rao": 3.12,
+        "Alla Rama Krishna Reddy (RK)": 3.12,
+        "Nara Lokesh": 3.12,
+        "Jaggarapu Ramohan Rao": 3.12,
+        "Machiraju Bheema Sankara Chaitanya": 3.12,
+        "Velalla Sai Subramanyam": 3.12,
+        "Lokam Sesha Siva Bhaskara Rao": 3.12,
+        "Thota Siva Rama Prasad": 3.12,
+        "G. Prasad": 3.12,
+        "Jaleel.Shaik": 3.12,
+        "Deepala Sambhashiva Rao": 3.12,
+        "Vinay Kishore Merigala": 3.12,
+        "Saira Banu": 3.12,
+        "Akkisetti Sri Krishna": 3.12,
+        "Tamanna Simhadri": 3.12,
+        "Alla Radha Devi": 3.12,
+        "Ravuri Kishore Babu (RK)": 3.12,
+        "Karumanchi Ramarao": 3.12,
+        "Valaparla Kishore": 3.12,
+        "Thondamallu Vijaya Bhaskar": 3.12,
+        "Kosanam Srinivasa Rao": 3.12,
+        "Kasani Sudhakar Babu": 3.12,
+        "Nandipalli Srinivasa Rao": 3.12,
+        "Naidu Nagaraju": 3.12,
+        "Tariq Shaik": 3.12,
+        "Kammela. Suri Babu": 3.12,
+        "Shaik Raheem": 3.12,
+        "Babu Rao Itta": 3.12
+      },
+      "total_votes": 64,
+      "winner": {
+        "name": "Shaik Saleem",
+        "votes": 4,
+        "percentage": 6.25,
+        "margin_votes": 2,
+        "margin_percentage": 3.12
+      },
+      "runner_up": {
+        "name": "Videla Sai Srinivas",
+        "votes": 2,
+        "percentage": 3.12
+      }
+    },
+    "demographic_analysis": {
+      "age_groups": {
+        "counts": {
+          "36-50": 30,
+          "26-35": 18,
+          "50+": 16,
+          "18-25": 0
+        },
+        "percentages": {
+          "36-50": 46.88,
+          "26-35": 28.12,
+          "50+": 25.0,
+          "18-25": 0.0
+        },
+        "dominant_group": "36-50",
+        "dominant_percentage": 46.88
+      },
+      "gender": {
+        "counts": {
+          "Male": 58,
+          "Female": 4,
+          "Other": 2
+        },
+        "percentages": {
+          "Male": 90.62,
+          "Female": 6.25,
+          "Other": 3.12
+        },
+        "male_percentage": 90.62,
+        "female_percentage": 6.25
+      },
+      "locations": {
+        "top_10_counts": {
+          "Mangalagiri": 64
+        },
+        "top_10_percentages": {
+          "Mangalagiri": 100.0
+        },
+        "highest_turnout_location": "Mangalagiri",
+        "highest_turnout_count": 64,
+        "highest_turnout_percentage": 100.0
+      }
+    },
+    "narrative_insights": [
+      "\ud83c\udfc6 Shaik Saleem is leading with 6.25% of total votes (4 votes).",
+      "\ud83d\udcc8 Margin of victory: 2 votes (3.12% of total votes).",
+      "\ud83d\udc66 Most voters were in the 36-50 age group (46.88%).",
+      "\u2696\ufe0f Gender distribution: 90.62% Male, 6.25% Female (gap: 84.4%).",
+      "\ud83c\udfd9\ufe0f Mangalagiri had the highest turnout with 64 votes (100.0%).",
+      "\ud83d\uddf3\ufe0f Election Overview: 64 total votes cast across 31 candidates.",
+      "\ud83d\udd25 This was a highly competitive election with a narrow victory margin.",
+      "\ud83d\udcca Age Analysis: 36-50 voters drove the election outcome, representing 46.88% of the electorate.",
+      "\ud83d\udcc8 Male voters showed higher participation in this election.",
+      "\u23f0 Analysis completed on 2025-08-31 00:16:20",
+      "\u2705 All voting data has been verified and analyzed using AI-powered algorithms."
+    ],
+    "visualizations": {
+      "charts_created": 5,
+      "chart_files": [
+        "votes_per_candidate.png",
+        "vote_percentage_share.png",
+        "age_group_distribution.png",
+        "location_participation.png",
+        "gender_distribution.png"
+      ]
+    },
+    "summary": {
+      "winner": "Shaik Saleem",
+      "winning_percentage": 6.25,
+      "margin_of_victory": 3.12,
+      "key_insights": [
+        "\ud83c\udfc6 Shaik Saleem is leading with 6.25% of total votes (4 votes).",
+        "\ud83d\udcc8 Margin of victory: 2 votes (3.12% of total votes).",
+        "\ud83d\udc66 Most voters were in the 36-50 age group (46.88%)."
+      ]
+    }
+  }
+}

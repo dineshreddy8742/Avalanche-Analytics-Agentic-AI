@@ -1,0 +1,123 @@
+{
+  "election_analysis": {
+    "metadata": {
+      "analysis_timestamp": "2025-08-31T00:11:55.004669",
+      "total_votes": 20,
+      "total_candidates": 10,
+      "analyzer_version": "AI Blockchain Voting Analyzer v1.0"
+    },
+    "candidate_results": {
+      "candidate_votes": {
+        "K.ATCHIM NAIDU": 2,
+        "D.PRABHA GOUD": 2,
+        "GANDIKOTA RAJESH": 2,
+        "KUNA. BABURAO": 2,
+        "TEDDU RAMADASU": 2,
+        "NAGA SANDEEP PANCHAKARLA": 2,
+        "APPARAO KORADA": 2,
+        "SABBAM HARI": 2,
+        "MUTTAMSETTI SRINIVASARAO (AVANTHI SRINIVAS)": 2,
+        "BANKA VENKATA APPARAO": 2
+      },
+      "candidate_percentages": {
+        "K.ATCHIM NAIDU": 10.0,
+        "D.PRABHA GOUD": 10.0,
+        "GANDIKOTA RAJESH": 10.0,
+        "KUNA. BABURAO": 10.0,
+        "TEDDU RAMADASU": 10.0,
+        "NAGA SANDEEP PANCHAKARLA": 10.0,
+        "APPARAO KORADA": 10.0,
+        "SABBAM HARI": 10.0,
+        "MUTTAMSETTI SRINIVASARAO (AVANTHI SRINIVAS)": 10.0,
+        "BANKA VENKATA APPARAO": 10.0
+      },
+      "total_votes": 20,
+      "winner": {
+        "name": "K.ATCHIM NAIDU",
+        "votes": 2,
+        "percentage": 10.0,
+        "margin_votes": 0,
+        "margin_percentage": 0.0
+      },
+      "runner_up": {
+        "name": "D.PRABHA GOUD",
+        "votes": 2,
+        "percentage": 10.0
+      }
+    },
+    "demographic_analysis": {
+      "age_groups": {
+        "counts": {
+          "26-35": 8,
+          "36-50": 6,
+          "50+": 6,
+          "18-25": 0
+        },
+        "percentages": {
+          "26-35": 40.0,
+          "36-50": 30.0,
+          "50+": 30.0,
+          "18-25": 0.0
+        },
+        "dominant_group": "26-35",
+        "dominant_percentage": 40.0
+      },
+      "gender": {
+        "counts": {
+          "Male": 18,
+          "Female": 2
+        },
+        "percentages": {
+          "Male": 90.0,
+          "Female": 10.0
+        },
+        "male_percentage": 90.0,
+        "female_percentage": 10.0
+      },
+      "locations": {
+        "top_10_counts": {
+          "Bhimli": 20
+        },
+        "top_10_percentages": {
+          "Bhimli": 100.0
+        },
+        "highest_turnout_location": "Bhimli",
+        "highest_turnout_count": 20,
+        "highest_turnout_percentage": 100.0
+      }
+    },
+    "narrative_insights": [
+      "\ud83c\udfc6 K.ATCHIM NAIDU is leading with 10.0% of total votes (2 votes).",
+      "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
+      "\ud83d\udc66 Most voters were in the 26-35 age group (40.0%).",
+      "\u2696\ufe0f Gender distribution: 90.0% Male, 10.0% Female (gap: 80.0%).",
+      "\ud83c\udfd9\ufe0f Bhimli had the highest turnout with 20 votes (100.0%).",
+      "\ud83d\uddf3\ufe0f Election Overview: 20 total votes cast across 10 candidates.",
+      "\ud83d\udd25 This was a highly competitive election with a narrow victory margin.",
+      "\ud83d\udcca Age Analysis: 26-35 voters drove the election outcome, representing 40.0% of the electorate.",
+      "\ud83d\udcc8 Male voters showed higher participation in this election.",
+      "\u23f0 Analysis completed on 2025-08-31 00:11:55",
+      "\u2705 All voting data has been verified and analyzed using AI-powered algorithms."
+    ],
+    "visualizations": {
+      "charts_created": 5,
+      "chart_files": [
+        "votes_per_candidate.png",
+        "vote_percentage_share.png",
+        "age_group_distribution.png",
+        "location_participation.png",
+        "gender_distribution.png"
+      ]
+    },
+    "summary": {
+      "winner": "K.ATCHIM NAIDU",
+      "winning_percentage": 10.0,
+      "margin_of_victory": 0.0,
+      "key_insights": [
+        "\ud83c\udfc6 K.ATCHIM NAIDU is leading with 10.0% of total votes (2 votes).",
+        "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
+        "\ud83d\udc66 Most voters were in the 26-35 age group (40.0%)."
+      ]
+    }
+  }
+}
