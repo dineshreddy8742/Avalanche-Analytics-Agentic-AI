@@ -63,7 +63,7 @@ def start_server():
         socketio.run(
             app,
             host='0.0.0.0',
-            port=8080,
+            port=int(os.environ.get('PORT', 8080)), # Get PORT from environment, default to 8080
                              debug=True,  # Set to True for debugging
             allow_unsafe_werkzeug=True
         )
