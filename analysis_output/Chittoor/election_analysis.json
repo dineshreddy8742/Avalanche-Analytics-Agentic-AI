@@ -1,7 +1,7 @@
 {
   "election_analysis": {
     "metadata": {
-      "analysis_timestamp": "2025-08-30T17:59:51.745089",
+      "analysis_timestamp": "2025-08-31T09:48:47.374861",
       "total_votes": 22,
       "total_candidates": 11,
       "analyzer_version": "AI Blockchain Voting Analyzer v1.0"
@@ -87,16 +87,18 @@
       }
     },
     "narrative_insights": [
-      "\ud83c\udfc6 K . Prabhakar Reddy is leading with 9.09% of total votes (2 votes).",
-      "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
-      "\ud83d\udc66 Most voters were in the 50+ age group (54.55%).",
-      "\ud83c\udfd9\ufe0f Chittoor had the highest turnout with 22 votes (100.0%).",
-      "\ud83d\uddf3\ufe0f Election Overview: 22 total votes cast across 11 candidates.",
-      "\ud83d\udd25 This was a highly competitive election with a narrow victory margin.",
-      "\ud83d\udcca Age Analysis: 50+ voters drove the election outcome, representing 54.55% of the electorate.",
-      "\ud83d\udcc8 Male voters showed higher participation in this election.",
-      "\u23f0 Analysis completed on 2025-08-30 17:59:51",
-      "\u2705 All voting data has been verified and analyzed using AI-powered algorithms."
+      "K . Prabhakar Reddy is leading with 9.09% of total votes (2 votes).",
+      "Margin of victory: 0 votes (0.0% of total votes).",
+      "K . Prabhakar Reddy is leading with 9.09% of total votes (2 votes).",
+      "Margin of victory: 0 votes (0.0% of total votes).",
+      "Most voters were in the 50+ age group (54.55%).",
+      "Chittoor had the highest turnout with 22 votes (100.0%).",
+      "Election Overview: 22 total votes cast across 11 candidates.",
+      "This was a highly competitive election with a narrow victory margin.",
+      "Age Analysis: 50+ voters drove the election outcome, representing 54.55% of the electorate.",
+      "Male voters showed higher participation in this election.",
+      "Analysis completed on 2025-08-31 09:48:47",
+      "All voting data has been verified and analyzed using AI-powered algorithms."
     ],
     "visualizations": {
       "charts_created": 5,
@@ -113,9 +115,9 @@
       "winning_percentage": 9.09,
       "margin_of_victory": 0.0,
       "key_insights": [
-        "\ud83c\udfc6 K . Prabhakar Reddy is leading with 9.09% of total votes (2 votes).",
-        "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
-        "\ud83d\udc66 Most voters were in the 50+ age group (54.55%)."
+        "K . Prabhakar Reddy is leading with 9.09% of total votes (2 votes).",
+        "Margin of victory: 0 votes (0.0% of total votes).",
+        "K . Prabhakar Reddy is leading with 9.09% of total votes (2 votes)."
       ]
     }
   }

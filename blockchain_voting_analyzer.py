@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AI Voting Results Analysis Agent - Blockchain Platform
-======================================================
+=====
 
 Complete AI-powered election analysis system that generates comprehensive 
 results analysis for candidates and admins after voting has ended.
@@ -19,11 +19,11 @@ Built for blockchain-based voting platforms with complete transparency.
 
 import pandas as pd
 import numpy as np
-<<<<<<< HEAD
+
 import matplotlib
 matplotlib.use('Agg') # Use non-interactive backend for server environments
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 import json
@@ -59,8 +59,8 @@ class BlockchainVotingAnalyzer:
         # Create output directory
         os.makedirs(output_dir, exist_ok=True)
         
-        print("🤖 AI Voting Results Analyzer initialized")
-        print(f"📁 Output directory: {output_dir}")
+        print("AI Voting Results Analyzer initialized")
+        print(f"Output directory: {output_dir}")
     
     def load_voting_data(self, data_path: str = None, data_frame: pd.DataFrame = None) -> bool:
         """
@@ -87,26 +87,26 @@ class BlockchainVotingAnalyzer:
             missing_cols = [col for col in required_cols if col not in self.voting_data.columns]
             
             if missing_cols:
-                print(f"⚠️ Missing columns: {missing_cols}")
-                print("🔄 Attempting to map available columns...")
+                print(f"Missing columns: {missing_cols}")
+                print("Attempting to map available columns...")
                 self._map_columns()
             
             # Clean and validate data
             self.voting_data = self._clean_voting_data()
             
-            print(f"✅ Loaded {len(self.voting_data):,} voting records")
-            print(f"📊 Candidates: {self.voting_data['candidate_voted'].nunique()}")
-            print(f"👥 Voters: {self.voting_data['voter_id'].nunique()}")
+            print(f"Loaded {len(self.voting_data):,} voting records")
+            print(f"Candidates: {self.voting_data['candidate_voted'].nunique()}")
+            print(f"Voters: {self.voting_data['voter_id'].nunique()}")
             
             return True
             
         except Exception as e:
-            print(f"❌ Error loading voting data: {e}")
+            print(f"Error loading voting data: {e}")
             return False
     
     def _transform_demo_data(self, demo_data: pd.DataFrame) -> pd.DataFrame:
         """Transform demographic data to voting format for analysis."""
-        print("🔄 Transforming demographic data to voting format...")
+        print("Transforming demographic data to voting format...")
         
         # Create voting records from candidate data
         voting_records = []
@@ -181,11 +181,11 @@ class BlockchainVotingAnalyzer:
         - Calculate percentage of votes each candidate received
         - Identify winning candidate and margin of victory
         """
-        print("\n📊 Analyzing Candidate Results...")
+        print("Analyzing Candidate Results...")
         
         # Vote counts per candidate
         candidate_votes = self.voting_data['candidate_voted'].value_counts()
-<<<<<<< HEAD
+
         
         if candidate_votes.empty:
             results = {
@@ -194,24 +194,24 @@ class BlockchainVotingAnalyzer:
                 "runner_up": {"name": "N/A", "votes": 0, "percentage": 0}
             }
             self.analysis_results["candidate_results"] = results
-            print("⚠️ No candidate votes found to analyze.")
+            print("No candidate votes found to analyze.")
             return results
 
         total_votes = int(candidate_votes.sum())
         
         # Calculate percentages
         candidate_percentages = (candidate_votes / total_votes * 100).round(2) if total_votes > 0 else candidate_votes
-=======
+
         total_votes = len(self.voting_data)
         
         # Calculate percentages
         candidate_percentages = (candidate_votes / total_votes * 100).round(2)
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
         
         # Identify winner and margin
         winner = candidate_votes.index[0]
         winner_votes = candidate_votes.iloc[0]
-<<<<<<< HEAD
+
         
         if len(candidate_votes) > 1:
             runner_up = candidate_votes.index[1]
@@ -224,12 +224,12 @@ class BlockchainVotingAnalyzer:
             margin = winner_votes
             margin_percentage = 100.0
 
-=======
+
         runner_up_votes = candidate_votes.iloc[1] if len(candidate_votes) > 1 else 0
         margin = winner_votes - runner_up_votes
         margin_percentage = (margin / total_votes * 100).round(2)
         
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
         results = {
             "candidate_votes": candidate_votes.to_dict(),
             "candidate_percentages": candidate_percentages.to_dict(),
@@ -237,44 +237,40 @@ class BlockchainVotingAnalyzer:
             "winner": {
                 "name": winner,
                 "votes": int(winner_votes),
-<<<<<<< HEAD
+
                 "percentage": float(candidate_percentages.iloc[0]) if not candidate_percentages.empty else 0,
-=======
+
                 "percentage": float(candidate_percentages.iloc[0]),
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
                 "margin_votes": int(margin),
                 "margin_percentage": float(margin_percentage)
             },
             "runner_up": {
-<<<<<<< HEAD
+
                 "name": runner_up,
                 "votes": int(runner_up_votes),
-                "percentage": float(candidate_percentages.iloc[1]) if len(candidate_percentages) > 1 else 0
-=======
-                "name": candidate_votes.index[1] if len(candidate_votes) > 1 else "None",
-                "votes": int(runner_up_votes),
-                "percentage": float(candidate_percentages.iloc[1]) if len(candidate_votes) > 1 else 0
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+                "percentage": float(candidate_percentages.iloc[1]) if len(candidate_percentages) > 1 else 0,
+
             }
         }
         
         self.analysis_results["candidate_results"] = results
         
         # Generate insights
-<<<<<<< HEAD
+
         if not candidate_percentages.empty:
-            self.insights.append(f"🏆 {winner} is leading with {candidate_percentages.iloc[0]}% of total votes ({winner_votes:,} votes).")
+            self.insights.append(f"{winner} is leading with {candidate_percentages.iloc[0]}% of total votes ({winner_votes:,} votes).")
             if len(candidate_votes) > 1:
-                self.insights.append(f"📈 Margin of victory: {margin:,} votes ({margin_percentage}% of total votes).")
+                self.insights.append(f"Margin of victory: {margin:,} votes ({margin_percentage}% of total votes).")
         
-        print(f"✅ Winner: {winner} with {winner_votes:,} votes ({candidate_percentages.iloc[0] if not candidate_percentages.empty else 0}%)")
-=======
-        self.insights.append(f"🏆 {winner} is leading with {candidate_percentages.iloc[0]}% of total votes ({winner_votes:,} votes).")
+        print(f"Winner: {winner} with {winner_votes:,} votes ({candidate_percentages.iloc[0] if not candidate_percentages.empty else 0}%)")
+
+        self.insights.append(f"{winner} is leading with {candidate_percentages.iloc[0]}% of total votes ({winner_votes:,} votes).")
         if len(candidate_votes) > 1:
-            self.insights.append(f"📈 Margin of victory: {margin:,} votes ({margin_percentage}% of total votes).")
+            self.insights.append(f"Margin of victory: {margin:,} votes ({margin_percentage}% of total votes).")
         
-        print(f"✅ Winner: {winner} with {winner_votes:,} votes ({candidate_percentages.iloc[0]}%)")
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+        print(f"Winner: {winner} with {winner_votes:,} votes ({candidate_percentages.iloc[0]}%)")
+
         
         return results
     
@@ -285,7 +281,7 @@ class BlockchainVotingAnalyzer:
         - Show male vs female voting trends
         - Show votes by location distribution
         """
-        print("\n👥 Analyzing Demographics...")
+        print("Analyzing Demographics...")
         
         demographics = {}
         
@@ -306,7 +302,7 @@ class BlockchainVotingAnalyzer:
                 "dominant_percentage": float(age_percentages.iloc[0])
             }
             
-            self.insights.append(f"👦 Most voters were in the {age_distribution.index[0]} age group ({age_percentages.iloc[0]}%).")
+            self.insights.append(f"Most voters were in the {age_distribution.index[0]} age group ({age_percentages.iloc[0]}%).")
         
         # Gender Analysis
         if 'gender' in self.voting_data.columns:
@@ -322,7 +318,7 @@ class BlockchainVotingAnalyzer:
             
             if 'Male' in gender_percentages and 'Female' in gender_percentages:
                 gender_gap = abs(gender_percentages['Male'] - gender_percentages['Female'])
-                self.insights.append(f"⚖️ Gender distribution: {gender_percentages['Male']}% Male, {gender_percentages['Female']}% Female (gap: {gender_gap:.1f}%).")
+                self.insights.append(f"Gender distribution: {gender_percentages['Male']}% Male, {gender_percentages['Female']}% Female (gap: {gender_gap:.1f}%).")
         
         # Location Analysis
         if 'location' in self.voting_data.columns:
@@ -337,10 +333,10 @@ class BlockchainVotingAnalyzer:
                 "highest_turnout_percentage": float(location_percentages.iloc[0])
             }
             
-            self.insights.append(f"🏙️ {location_distribution.index[0]} had the highest turnout with {location_distribution.iloc[0]:,} votes ({location_percentages.iloc[0]}%).")
+            self.insights.append(f"{location_distribution.index[0]} had the highest turnout with {location_distribution.iloc[0]:,} votes ({location_percentages.iloc[0]}%).")
         
         self.analysis_results["demographics"] = demographics
-        print("✅ Demographic analysis completed")
+        print("Demographic analysis completed")
         
         return demographics
     
@@ -352,7 +348,7 @@ class BlockchainVotingAnalyzer:
         - Bar chart: Age group distribution
         - Bar chart: Location-wise participation
         """
-        print("\n📈 Creating Visualizations...")
+        print("Creating Visualizations...")
         
         charts_created = []
         
@@ -390,9 +386,9 @@ class BlockchainVotingAnalyzer:
             plt.savefig(chart_path, dpi=300, bbox_inches='tight')
             plt.close()
             charts_created.append(chart_path)
-            print("✅ Created: Votes per Candidate chart")
+            print("Created: Votes per Candidate chart")
         except Exception as e:
-            print(f"❌ Error creating candidate votes chart: {e}")
+            print(f"Error creating candidate votes chart: {e}")
         
         # 2. Pie Chart: Vote Percentage Share
         try:
@@ -420,9 +416,9 @@ class BlockchainVotingAnalyzer:
             plt.savefig(chart_path, dpi=300, bbox_inches='tight')
             plt.close()
             charts_created.append(chart_path)
-            print("✅ Created: Vote Percentage Share chart")
+            print("Created: Vote Percentage Share chart")
         except Exception as e:
-            print(f"❌ Error creating percentage share chart: {e}")
+            print(f"Error creating percentage share chart: {e}")
         
         # 3. Bar Chart: Age Group Distribution
         if "age_groups" in self.analysis_results["demographics"]:
@@ -448,9 +444,9 @@ class BlockchainVotingAnalyzer:
                 plt.savefig(chart_path, dpi=300, bbox_inches='tight')
                 plt.close()
                 charts_created.append(chart_path)
-                print("✅ Created: Age Group Distribution chart")
+                print("Created: Age Group Distribution chart")
             except Exception as e:
-                print(f"❌ Error creating age group chart: {e}")
+                print(f"Error creating age group chart: {e}")
         
         # 4. Bar Chart: Location-wise Participation (Top 10)
         if "locations" in self.analysis_results["demographics"]:
@@ -477,9 +473,9 @@ class BlockchainVotingAnalyzer:
                 plt.savefig(chart_path, dpi=300, bbox_inches='tight')
                 plt.close()
                 charts_created.append(chart_path)
-                print("✅ Created: Location Participation chart")
+                print("Created: Location Participation chart")
             except Exception as e:
-                print(f"❌ Error creating location chart: {e}")
+                print(f"Error creating location chart: {e}")
         
         # 5. Gender Distribution Pie Chart
         if "gender" in self.analysis_results["demographics"]:
@@ -498,9 +494,9 @@ class BlockchainVotingAnalyzer:
                 plt.savefig(chart_path, dpi=300, bbox_inches='tight')
                 plt.close()
                 charts_created.append(chart_path)
-                print("✅ Created: Gender Distribution chart")
+                print("Created: Gender Distribution chart")
             except Exception as e:
-                print(f"❌ Error creating gender chart: {e}")
+                print(f"Error creating gender chart: {e}")
         
         self.charts_created = charts_created
         return charts_created
@@ -510,7 +506,7 @@ class BlockchainVotingAnalyzer:
         Task 4: Generate plain-language insights
         Create easy-to-understand summary statements
         """
-        print("\n📝 Generating Narrative Insights...")
+        print("Generating Narrative Insights...")
         
         # We already generated some insights during analysis
         # Let's add more comprehensive insights
@@ -521,16 +517,16 @@ class BlockchainVotingAnalyzer:
         total_votes = self.analysis_results["candidate_results"]["total_votes"]
         num_candidates = len(self.analysis_results["candidate_results"]["candidate_votes"])
         
-        additional_insights.append(f"🗳️ Election Overview: {total_votes:,} total votes cast across {num_candidates} candidates.")
+        additional_insights.append(f"Election Overview: {total_votes:,} total votes cast across {num_candidates} candidates.")
         
         # Competitiveness insight
         winner_pct = self.analysis_results["candidate_results"]["winner"]["percentage"]
         if winner_pct > 60:
-            additional_insights.append("🎯 This was a decisive victory with a clear mandate.")
+            additional_insights.append("This was a decisive victory with a clear mandate.")
         elif winner_pct > 45:
-            additional_insights.append("⚖️ This was a competitive election with a moderate victory margin.")
+            additional_insights.append("This was a competitive election with a moderate victory margin.")
         else:
-            additional_insights.append("🔥 This was a highly competitive election with a narrow victory margin.")
+            additional_insights.append("This was a highly competitive election with a narrow victory margin.")
         
         # Demographic insights
         if "demographics" in self.analysis_results:
@@ -539,25 +535,25 @@ class BlockchainVotingAnalyzer:
             if "age_groups" in demo:
                 dominant_age = demo["age_groups"]["dominant_group"]
                 dominant_pct = demo["age_groups"]["dominant_percentage"]
-                additional_insights.append(f"📊 Age Analysis: {dominant_age} voters drove the election outcome, representing {dominant_pct}% of the electorate.")
+                additional_insights.append(f"Age Analysis: {dominant_age} voters drove the election outcome, representing {dominant_pct}% of the electorate.")
             
             if "gender" in demo:
                 male_pct = demo["gender"].get("male_percentage", 0)
                 female_pct = demo["gender"].get("female_percentage", 0)
                 if abs(male_pct - female_pct) < 5:
-                    additional_insights.append("🤝 Gender participation was well-balanced across male and female voters.")
+                    additional_insights.append("Gender participation was well-balanced across male and female voters.")
                 else:
                     leading_gender = "Male" if male_pct > female_pct else "Female"
-                    additional_insights.append(f"📈 {leading_gender} voters showed higher participation in this election.")
+                    additional_insights.append(f"{leading_gender} voters showed higher participation in this election.")
         
         # Combine all insights
         all_insights = self.insights + additional_insights
         
         # Add timestamp and election completion
-        all_insights.append(f"⏰ Analysis completed on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        all_insights.append("✅ All voting data has been verified and analyzed using AI-powered algorithms.")
+        all_insights.append(f"Analysis completed on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        all_insights.append("All voting data has been verified and analyzed using AI-powered algorithms.")
         
-        print(f"✅ Generated {len(all_insights)} narrative insights")
+        print(f"Generated {len(all_insights)} narrative insights")
         
         return all_insights
     
@@ -565,7 +561,7 @@ class BlockchainVotingAnalyzer:
         """
         Task 5: Generate structured JSON output with all results
         """
-        print("\n📄 Generating Structured Output...")
+        print("Generating Structured Output...")
         
         structured_output = {
             "election_analysis": {
@@ -596,7 +592,7 @@ class BlockchainVotingAnalyzer:
         with open(output_file, 'w') as f:
             json.dump(structured_output, f, indent=2, default=str)
         
-        print(f"✅ Structured output saved to: {output_file}")
+        print(f"Structured output saved to: {output_file}")
         
         return structured_output
     
@@ -612,7 +608,7 @@ class BlockchainVotingAnalyzer:
         5. Generate insights
         6. Produce structured output
         """
-        print("🚀 Starting Complete AI Election Analysis")
+        print("Starting Complete AI Election Analysis")
         print("=" * 60)
         
         # Step 1: Load data
@@ -632,21 +628,21 @@ class BlockchainVotingAnalyzer:
         results = self.generate_structured_output()
         
         print("\n" + "=" * 60)
-        print("✅ ANALYSIS COMPLETE!")
+        print("ANALYSIS COMPLETE!")
         print("=" * 60)
-        print(f"📊 Total Votes Analyzed: {results['election_analysis']['metadata']['total_votes']:,}")
-        print(f"🏆 Winner: {results['election_analysis']['summary']['winner']}")
-        print(f"📈 Winning Percentage: {results['election_analysis']['summary']['winning_percentage']:.1f}%")
-        print(f"📱 Charts Created: {len(self.charts_created)}")
-        print(f"💡 Insights Generated: {len(results['election_analysis']['narrative_insights'])}")
-        print(f"📁 Output Directory: {self.output_dir}")
+        print(f"Total Votes Analyzed: {results['election_analysis']['metadata']['total_votes']:,}")
+        print(f"Winner: {results['election_analysis']['summary']['winner']}")
+        print(f"Winning Percentage: {results['election_analysis']['summary']['winning_percentage']:.1f}%")
+        print(f"Charts Created: {len(self.charts_created)}")
+        print(f"Insights Generated: {len(results['election_analysis']['narrative_insights'])}")
+        print(f"Output Directory: {self.output_dir}")
         
         return results
 
 def main():
     """Demo the AI Voting Analysis Agent."""
     
-    print("🤖 AI Blockchain Voting Analysis Agent - Demo")
+    print("AI Blockchain Voting Analysis Agent - Demo")
     print("=" * 60)
     
     # Initialize analyzer
@@ -656,7 +652,7 @@ def main():
     results = analyzer.run_complete_analysis()
     
     # Display key results
-    print("\n🎯 KEY RESULTS SUMMARY:")
+    print("KEY RESULTS SUMMARY:")
     print("-" * 40)
     
     if "error" not in results:
@@ -664,12 +660,12 @@ def main():
         print(f"Winner: {summary['winner']}")
         print(f"Victory Margin: {summary['margin_of_victory']:.1f}%")
         
-        print("\n💡 TOP INSIGHTS:")
+        print("TOP INSIGHTS:")
         for i, insight in enumerate(summary['key_insights'], 1):
             print(f"{i}. {insight}")
         
-        print(f"\n📊 Visual outputs saved to: {analyzer.output_dir}")
-        print("📄 Structured data available in election_analysis.json")
+        print(f"Visual outputs saved to: {analyzer.output_dir}")
+        print("Structured data available in election_analysis.json")
     
     return results
 

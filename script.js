@@ -1,55 +1,41 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Avalanche Voting Analytics - Enhanced System Loading...');
     
-    // Configuration - Backend API connections
-    const API_BASE_URL = window.location.protocol + '//' + window.location.host;
-    const WEBSOCKET_URL = window.location.protocol + '//' + window.location.host;
-    const FALLBACK_API = 'http://127.0.0.1:5000';
-    
-    // Global state management
-    let socket = null;
-    let scene, camera, renderer, globe;
-    let currentTheme = 'light';
-    let charts = {};
-    let liveVoteCount = 0;
-    let predictionConfidence = 0;
-    let connectionStatus = 'connecting';
-    let constituencies = [];
+    const API_BASE_URL = 'http://localhost:8080';
+    const WEBSOCKET_URL = 'http://localhost:8080';
+
     let currentConstituency = null;
-    
-    // ===============================================
-    // CONNECTION STATUS MANAGEMENT
-    // ===============================================
-    
+
+    function getThemeColors() {
+        const isDarkMode = document.body.classList.contains('theme-dark');
+        return {
+            textColor: isDarkMode ? '#f5f5f5' : '#222',
+            tooltipBg: isDarkMode ? 'rgba(34, 34, 34, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+            gridColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+        };
+    }
+
+    // Connection Status Manager
     class ConnectionManager {
         constructor() {
             this.statusElement = document.getElementById('connectionStatus');
             this.loadingOverlay = document.getElementById('loadingOverlay');
             this.progressBar = document.getElementById('loadingProgress');
         }
-        
-        updateConnectionStatus(status) {
-            if (!this.statusElement) return;
-            
-            this.statusElement.className = 'connection-status';
-            
-            switch(status) {
-                case 'connected':
-                    this.statusElement.classList.add('connected');
-                    this.statusElement.innerHTML = '<span>CONNECTED</span>';
-                    break;
-                case 'disconnected':
-                    this.statusElement.classList.add('disconnected');
-                    this.statusElement.innerHTML = '<span>DISCONNECTED</span>';
-                    break;
-                case 'connecting':
-                default:
-                    this.statusElement.classList.add('connecting');
-                    this.statusElement.innerHTML = '<span>CONNECTING...</span>';
-                    break;
+        updateStatus(status) {
+            console.log('ConnectionManager.updateStatus called with:', status);
+            if (!this.statusElement) {
+                console.warn('Connection status element not found!');
+                return;
             }
+            this.statusElement.className = 'connection-status';
+            this.statusElement.innerHTML = `<span>${
+                status === 'connected' ? 'CONNECTED' :
+                status === 'disconnected' ? 'DISCONNECTED' :
+                'CONNECTING...'
+            }</span>`;
+            this.statusElement.classList.add(status);
         }
-        
         showLoading(message = 'Loading Analytics...') {
             if (this.loadingOverlay) {
                 this.loadingOverlay.classList.remove('d-none');
@@ -58,16 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.animateProgress();
             }
         }
-        
         hideLoading() {
-            if (this.loadingOverlay) {
-                this.loadingOverlay.classList.add('d-none');
-            }
+            if (this.loadingOverlay) this.loadingOverlay.classList.add('d-none');
         }
-        
         animateProgress() {
             if (!this.progressBar) return;
-            
             let progress = 0;
             const interval = setInterval(() => {
                 progress += Math.random() * 15;
@@ -79,2756 +60,1666 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 200);
         }
     }
-    
-    // ===============================================
-    // API SERVICE - BACKEND CONNECTIONS
-    // ===============================================
-    
+    const connectionManager = new ConnectionManager();
+
+    // API Service for HTTP Requests
     class APIService {
         constructor() {
-            this.baseURL = API_BASE_URL;
-<<<<<<< HEAD
+            this.primary = API_BASE_URL;
         }
-        
         async request(endpoint, options = {}) {
-            const url = `${this.baseURL}${endpoint}`;
+            const url = `${this.primary}${endpoint}`;
             try {
-                const response = await fetch(url, {
+                const res = await fetch(url, {
                     ...options,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    }
+                    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
                 });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error(`Failed to fetch from ${url}:`, error.message);
-                throw error;
-=======
-            this.fallbackURL = FALLBACK_API;
-        }
-        
-        async request(endpoint, options = {}) {
-            const urls = [`${this.baseURL}${endpoint}`, `${this.fallbackURL}${endpoint}`];
-            
-            for (const url of urls) {
-                try {
-                    const response = await fetch(url, {
-                        ...options,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...options.headers
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    
-                    return await response.json();
-                } catch (error) {
-                    console.error(`Failed to fetch from ${url}:`, error.message);
-                    if (url === urls[urls.length - 1]) {
-                        throw error;
-                    }
-                }
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                return await res.json();
+            } catch (e) {
+                console.error(`Failed fetch ${url}: ${e.message}`);
+                throw e; // Re-throw the error to be caught by the calling function
             }
         }
-        
-        async getHealthStatus() {
-            return this.request('/api/health');
-        }
-        
-        async getAIInsights() {
-            return this.request('/api/ai/insights');
-        }
-        
-        async getLivePredictions() {
-            return this.request('/api/ai/predictions/live');
-        }
-        
-        async getEnhancedAnalytics() {
-            return this.request('/api/analytics/enhanced');
-        }
-        
-        async getConstituencies() {
-            return this.request('/api/constituencies');
-        }
-        
-        async getConstituencyAnalysis(constituency) {
-            return this.request(`/api/analysis/constituency/${encodeURIComponent(constituency)}`);
-        }
-        
-        async getLiveTransactions() {
-            return this.request('/api/live/transactions');
-        }
-        
-        async get3DVisualizationData() {
-            return this.request('/api/visualization/3d');
-        }
-        
-        async getNetworkStats() {
-            return this.request('/api/blockchain/network-stats');
-        }
-        
-        async getDemographicAnalysis() {
-            return this.request('/api/analytics/demographics');
-        }
-<<<<<<< HEAD
-
-        async getHistoricalVotes() {
-            return this.request('/api/analytics/historical-votes');
-        }
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+        getHealth() { return this.request('/api/health'); }
+        getAIInsights() { return this.request('/api/ai/insights'); }
+        getLivePredictions() { return this.request('/api/ai/predictions/live'); }
+        getAnalytics() { return this.request('/api/analytics/enhanced'); }
+        getConstituencies() { return this.request('/api/constituencies'); }
+        getConstituencyAnalysis(name) { return this.request(`/api/analysis/constituency/${encodeURIComponent(name)}`); }
+        getLiveTransactions() { return this.request('/api/live/transactions'); }
+        get3DData() { return this.request('/api/visualization/3d'); }
+        getNetworkStats() { return this.request('/api/blockchain/network-stats'); }
+        getHistoricalVotes() { return this.request('/api/analytics/historical-votes'); }
     }
-    
-    // ===============================================
-    // CHART VISUALIZATION MANAGER
-    // ===============================================
-    
+
+    // Chart Manager to handle Chart.js charts creation and updates
     class ChartManager {
         constructor() {
             this.charts = {};
-            this.colorSchemes = {
+            this.colors = {
                 avalanche: ['#E84142', '#2D74DA', '#FF6B35', '#00D4AA', '#9B59B6'],
                 rainbow: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'],
                 gradient: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
             };
         }
-        
-        createChart(canvasId, type, data, options = {}) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) {
-                console.error(`Canvas element not found: ${canvasId}`);
-                return null;
-            }
-            
-            const ctx = canvas.getContext('2d');
-            
-            // Destroy existing chart if exists
-            if (this.charts[canvasId]) {
-                this.charts[canvasId].destroy();
-            }
-            
-            // Enhanced chart options with animations
+        createChart(id, type, data, options = {}) {
+            console.log(`ChartManager: Attempting to create chart '${id}' (Type: ${type}) with data:`, data, 'and options:', options);
+
+            console.log(`Canvas element for ${id} exists:`, !!document.getElementById(id));
+            const ctx = document.getElementById(id)?.getContext('2d');
+            if (!ctx) { console.warn(`Canvas with id: ${id} not found`); return null; }
+
+            // Force canvas dimensions before Chart.js initialization
+            ctx.canvas.style.width = '100%';
+            ctx.canvas.style.height = '350px'; // Set a default height
+
+            // Ensure canvas visibility
+            ctx.canvas.style.display = 'block';
+
+            if (this.charts[id]) this.charts[id].destroy();
+            data.datasets.forEach((ds,i) => {
+                if (!ds.backgroundColor) {
+                    const palette = (type == 'pie' || type == 'doughnut') ? this.colors.avalanche : this.colors.avalanche.map(c => c + '80');
+                    ds.backgroundColor = palette;
+                    ds.borderColor = palette.map(c => c.replace('80',''));
+                    ds.borderWidth = 2;
+                }
+            });
             const defaultOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20,
-                            font: {
-<<<<<<< HEAD
-                                size: 16,
-=======
-                                size: 12,
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                                weight: 'bold'
-                            }
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{
+                    legend:{
+                        position:'bottom',
+                        labels:{
+                            usePointStyle:true,
+                            padding:20,
+                            font:{
+                                size:16, /* Increased legend font size */
+                                weight:'bold'
+                            },
+                            color: getThemeColors().textColor /* Dynamic color */
                         }
                     },
-                    tooltip: {
-                        backgroundColor: 'rgba(26, 29, 41, 0.9)',
-                        titleColor: '#ffffff',
-                        bodyColor: '#ffffff',
-                        borderColor: '#E84142',
-                        borderWidth: 1,
-                        cornerRadius: 10,
-<<<<<<< HEAD
-                        displayColors: true,
-                        titleFont: { size: 16, weight: 'bold' },
-                        bodyFont: { size: 14 }
-                    },
-                    title: {
-                        display: true,
-                        font: {
-                            size: 20,
-                            weight: 'bold'
+                    tooltip:{
+                        backgroundColor: getThemeColors().tooltipBg, /* Dynamic background */
+                        titleColor: getThemeColors().textColor, /* Dynamic color */
+                        bodyColor: getThemeColors().textColor, /* Dynamic color */
+                        borderColor:'#E84142',
+                        borderWidth:1,
+                        cornerRadius:10,
+                        titleFont:{
+                            size:14, /* Larger tooltip font */
+                            weight:'bold'
                         },
-                        padding: {
-                            top: 10,
-                            bottom: 20
-                        }
-=======
-                        displayColors: true
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+                        bodyFont:{
+                            size:14 /* Larger tooltip font */
+                        },
+                        padding: 10 /* Add padding to tooltips */
+                    },
+                    title:{
+                        display:true,
+                        font:{
+                            size:20, /* Chart title font size */
+                            weight:'bold'
+                        },
+                        color: getThemeColors().textColor, /* Dynamic color */
+                        padding:{top:10,bottom:20}
                     }
                 },
-                animation: {
-                    duration: 2000,
-                    easing: 'easeInOutQuart'
-                },
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-<<<<<<< HEAD
-                },
-                scales: {
-                    x: {
-                        ticks: {
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
+                animation:{duration:2000,easing:'easeInOutQuart'},
+                interaction:{mode:'index', intersect:false},
+                scales:{
+                    x:{
+                        ticks:{
+                            font:{
+                                size:14, /* Axis tick font size */
+                                weight:'bold'
+                            },
+                            color: getThemeColors().textColor /* Dynamic color */
                         },
-                        title: {
-                            display: true,
-                            font: {
-                                size: 16,
-                                weight: 'bold'
-                            }
-                        }
+                        title:{
+                            display:true,
+                            font:{
+                                size:16, /* Axis title font size */
+                                weight:'bold'
+                            },
+                            color: getThemeColors().textColor /* Dynamic color */
+                        },
+                        grid:{
+                            color: getThemeColors().gridColor /* Dynamic grid color */
+                        },
+                        offset: true /* Add offset for padding */
                     },
-                    y: {
-                        ticks: {
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
+                    y:{
+                        ticks:{
+                            font:{
+                                size:14, /* Axis tick font size */
+                                weight:'bold'
+                            },
+                            color: getThemeColors().textColor /* Dynamic color */
                         },
-                        title: {
-                            display: true,
-                            font: {
-                                size: 16,
-                                weight: 'bold'
-                            }
+                        title:{
+                            display:true,
+                            font:{
+                                size:16, /* Axis title font size */
+                                weight:'bold'
+                            },
+                            color: getThemeColors().textColor /* Dynamic color */
+                        },
+                        grid:{
+                            color: getThemeColors().gridColor /* Dynamic grid color */
                         }
                     }
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                 }
             };
-            
-            // Apply color scheme to data
-            if (data.datasets && data.datasets.length > 0) {
-                data.datasets.forEach((dataset, index) => {
-                    if (!dataset.backgroundColor) {
-                        if (type === 'doughnut' || type === 'pie') {
-                            dataset.backgroundColor = this.colorSchemes.avalanche;
-                            dataset.borderColor = '#ffffff';
-                            dataset.borderWidth = 2;
-                        } else {
-                            dataset.backgroundColor = this.colorSchemes.avalanche[index % this.colorSchemes.avalanche.length] + '80';
-                            dataset.borderColor = this.colorSchemes.avalanche[index % this.colorSchemes.avalanche.length];
-                            dataset.borderWidth = 2;
-                        }
-                    }
-                });
-            }
-            
-            const mergedOptions = this.mergeOptions(defaultOptions, options, type);
-            
-            this.charts[canvasId] = new Chart(ctx, {
-                type: type,
-                data: data,
-                options: mergedOptions
-            });
-            
-            return this.charts[canvasId];
+            const opts = Object.assign(defaultOptions, options);
+            this.charts[id] = new Chart(ctx,{type, data, options:opts});
         }
-        
-        mergeOptions(defaultOptions, userOptions, chartType) {
-            const merged = { ...defaultOptions, ...userOptions };
-            
-            // Type-specific enhancements
-            if (chartType === 'line') {
-                merged.elements = {
-                    line: {
-                        tension: 0.4,
-                        borderCapStyle: 'round'
-                    },
-                    point: {
-                        radius: 4,
-                        hoverRadius: 8,
-                        backgroundColor: '#ffffff',
-                        borderWidth: 2
-                    }
-                };
-            }
-            
-            if (chartType === 'bar') {
-                merged.scales = {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: '#888',
-                            font: {
-                                weight: 'bold'
-                            }
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            color: '#888',
-                            font: {
-                                weight: 'bold'
-                            }
-                        }
-                    }
-                };
-            }
-            
-            return merged;
-        }
-        
-        updateChart(canvasId, newData) {
-            if (this.charts[canvasId]) {
-                this.charts[canvasId].data = newData;
-                this.charts[canvasId].update();
+        updateChart(id, newData) {
+            console.log(`ChartManager: Attempting to update chart '${id}' with new data:`, newData);
+            if (this.charts[id]) {
+                this.charts[id].data = newData;
+                this.charts[id].update();
             }
         }
-        
-        destroyChart(canvasId) {
-            if (this.charts[canvasId]) {
-                this.charts[canvasId].destroy();
-                delete this.charts[canvasId];
+        destroyChart(id) {
+            console.log(`Attempting to destroy chart: ${id}`);
+            if (this.charts[id]) {
+                this.charts[id].destroy();
+                delete this.charts[id];
+                console.log(`Chart ${id} destroyed.`);
             }
         }
     }
-    
-    // ===============================================
-    // WEBSOCKET MANAGER - REAL-TIME UPDATES
-    // ===============================================
-    
+
+    // WebSocket Manager for real-time updates and reconnection logic
     class WebSocketManager {
         constructor(apiService, chartManager) {
-            this.apiService = apiService;
-            this.chartManager = chartManager;
+            this.api = apiService;
+            this.chartMgr = chartManager;
             this.socket = null;
-            this.reconnectAttempts = 0;
-            this.maxReconnectAttempts = 5;
+            this.retries = 0;
+            this.maxRetries = 5;
         }
-        
         connect() {
             try {
-                // Try connecting to the correct WebSocket URL
-                this.socket = io(WEBSOCKET_URL, {
-                    transports: ['websocket', 'polling'],
-                    timeout: 20000,
-                    forceNew: true
-                });
-                
-                this.setupEventHandlers();
-                
-            } catch (error) {
-                console.error('WebSocket connection failed:', error);
-                this.handleConnectionError();
-            }
+                this.socket = io(WEBSOCKET_URL, {transports:['websocket','polling'],timeout:20000,forceNew:true});
+                this.registerEvents();
+            } catch(e) { console.error('WebSocket init error:', e); this.fallback(); }
         }
-        
-        setupEventHandlers() {
+        registerEvents() {
             this.socket.on('connect', () => {
-                console.log('WebSocket connected successfully');
-                connectionManager.updateConnectionStatus('connected');
-                this.reconnectAttempts = 0;
-                
-                // Request initial data
+                connectionManager.updateStatus('connected');
+                this.retries = 0;
                 this.socket.emit('request_live_data');
                 this.socket.emit('request_3d_data');
             });
-            
-            this.socket.on('disconnect', () => {
-                console.log('WebSocket disconnected');
-                connectionManager.updateConnectionStatus('disconnected');
-            });
-            
-            this.socket.on('connect_error', (error) => {
-                console.error('WebSocket connection error:', error);
-                this.handleConnectionError();
-<<<<<<< HEAD
-                app.handleInitializationError(error);
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            });
-            
-            // Live data updates
-            this.socket.on('enhanced_voting_update', (data) => {
-                this.handleVotingUpdate(data);
-            });
-            
-            this.socket.on('blockchain_feed_update', (data) => {
-                this.handleBlockchainUpdate(data);
-            });
-            
-            this.socket.on('prediction_update', (data) => {
-                this.handlePredictionUpdate(data);
-            });
-            
-            this.socket.on('vote_count_update', (data) => {
-                this.handleVoteCountUpdate(data);
-            });
-            
-            this.socket.on('new_transaction', (data) => {
-                this.handleNewTransaction(data);
-            });
-            
-            this.socket.on('visualization_data', (data) => {
-                this.handle3DVisualizationUpdate(data);
-            });
+            this.socket.on('disconnect', () => connectionManager.updateStatus('disconnected'));
+            this.socket.on('connect_error', (e) => { console.error('WS connect_error:', e); this.handleReconnect(); });
+            this.socket.on('enhanced_voting_update', data => app.handleVotingUpdate(data));
+            this.socket.on('blockchain_update', data => app.handleBlockchainUpdate(data));
+            this.socket.on('prediction_update', data => app.handlePredictionUpdate(data));
+            this.socket.on('vote_count_update', data => app.handleVoteCountUpdate(data));
+            this.socket.on('new_transaction', data => app.handleNewTransaction(data));
+            this.socket.on('visualization_data', data => app.handle3DVisualizationUpdate(data));
         }
-        
-        handleConnectionError() {
-            connectionManager.updateConnectionStatus('connecting');
-            
-            if (this.reconnectAttempts < this.maxReconnectAttempts) {
-                this.reconnectAttempts++;
-                console.log(`Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
-                
-                setTimeout(() => {
-                    this.connect();
-                }, 3000 * this.reconnectAttempts);
+        handleReconnect() {
+            if (this.retries < this.maxRetries) {
+                this.retries++;
+                setTimeout(() => this.connect(), 3000 * this.retries);
             } else {
-                console.error('Max reconnection attempts reached. Falling back to polling.');
-                connectionManager.updateConnectionStatus('disconnected');
-                this.startPollingFallback();
+                console.warn('Max WS retries reached; start fallback polling');
+                connectionManager.updateStatus('disconnected');
+                this.fallback();
             }
         }
-        
-        handleVotingUpdate(data) {
-            if (!app.initialDataLoaded) {
-                app.handleInitialData(data);
+        fallback() {
+            setInterval(async () => {
+                try {
+                    const [analytics,predictions,transactions] = await Promise.allSettled([
+                        this.api.getAnalytics(),
+                        this.api.getLivePredictions(),
+                        this.api.getLiveTransactions()
+                    ]);
+                    if (analytics.status === 'fulfilled') app.handleVotingUpdate(analytics.value);
+                    if (predictions.status === 'fulfilled') app.handlePredictionUpdate(predictions.value);
+                    if (transactions.status === 'fulfilled') app.handleBlockchainUpdate({transactions: transactions.value.transactions});
+                } catch (e) { console.error('Fallback polling error:', e); }
+            },10000);
+        }
+        disconnect() {
+            this.socket?.disconnect();
+        }
+    }
+
+    // Search Manager for Constituency Search Interaction
+    class SearchManager {
+        constructor(apiService, chartManager, app) {
+            this.api = apiService;
+            this.chartMgr = chartManager;
+            this.app = app;
+            this.constituencies = [];
+            this.topSuggestions = [];
+            this.highlightIndex = -1;
+            this.initElements();
+            this.bindEvents();
+        }
+        initElements() {
+            this.input = document.getElementById('constituencySearch');
+            this.results = document.getElementById('searchResults');
+            this.button = document.getElementById('searchButton');
+        }
+        async loadConstituencies() {
+            console.log('SearchManager: Attempting to load constituencies...');
+            try {
+                const data = await this.api.getConstituencies();
+                console.log('SearchManager: Data from API for constituencies:', data);
+                if (Array.isArray(data?.constituencies)) {
+                    this.constituencies = data.constituencies;
+                    console.log('SearchManager: Constituencies loaded successfully.', this.constituencies.length, 'items.');
+                } else if (Array.isArray(data)) {
+                    this.constituencies = data;
+                    console.log('SearchManager: Constituencies loaded successfully (direct array).', this.constituencies.length, 'items.');
+                } else {
+                    console.warn('SearchManager: Invalid constituency data format:', data);
+                    throw new Error('Invalid constituency data');
+                }
+            } catch (error) {
+                console.error('SearchManager: Error loading constituencies:', error);
+            }
+        }
+        bindEvents() {
+            console.log('SearchManager: Binding events...');
+            if (!this.input || !this.results || !this.button) {
+                console.warn('SearchManager: Search elements not found for event binding.', {input: !!this.input, results: !!this.results, button: !!this.button});
+                return;
             }
 
+            let debounceTimeout = null;
+            this.input.addEventListener('input', e => {
+                console.log('SearchManager: Input event fired. Value:', e.target.value);
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => this.search(e.target.value), 300);
+            });
+            this.input.addEventListener('keydown', e => {
+                console.log('SearchManager: Keydown event fired. Key:', e.key);
+                const items = this.results.querySelectorAll('.search-result-item');
+                if (!items.length) return;
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.highlightIndex = (this.highlightIndex + 1) % items.length;
+                    this.updateHighlight(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.highlightIndex = (this.highlightIndex - 1 + items.length) % items.length;
+                    this.updateHighlight(items);
+                } else if (e.key === 'Enter' && this.highlightIndex >= 0) {
+                    e.preventDefault();
+                    this.select(items[this.highlightIndex].dataset.constituency);
+                } else if (e.key === 'Escape') {
+                    this.hideResults();
+                }
+            });
+            this.input.addEventListener('focus', () => {
+                console.log('SearchManager: Input focused.');
+                if (!this.input.value) this.showResults(this.topSuggestions, 'Top Suggestions');
+                else if (this.results.children.length) this.results.style.display = 'block';
+            });
+            this.button.addEventListener('click', () => {
+                console.log('SearchManager: Search button clicked.');
+                this.handleSearch();
+            });
+
+            document.addEventListener('click', e => {
+                if (!this.input.contains(e.target) && !this.results.contains(e.target)) this.hideResults();
+            });
+            console.log('SearchManager: Events bound.');
+        }
+        search(query) {
+            console.log('SearchManager: search function called with query:', query);
+            query = query.trim();
+            if (query.length < 2) {
+                this.hideResults();
+                console.log('SearchManager: Query too short, hiding results.');
+                return;
+            }
+            const results = this.constituencies.filter(c => c.toLowerCase().includes(query.toLowerCase())).slice(0, 10);
+            console.log('SearchManager: Filtered search results:', results);
+            this.showResults(results, 'Results');
+        }
+        showResults(results, title) {
+            console.log('SearchManager: showResults called with results:', results, 'and title:', title);
+            if (!this.results) {
+                console.warn('SearchManager: Search results container (this.results) not found!');
+                return;
+            }
+            console.log('SearchManager: Search results container element:', this.results);
+            console.log('SearchManager: Computed style of search results container:', window.getComputedStyle(this.results));
+            let html = `<div class="search-header">${title}</div>`;
+            if (!results.length && title !== 'Top Suggestions') html += '<div class="search-empty">No results found.</div>';
+            else results.forEach(r => {
+                // Assuming r is an object like { name: "Rayachoty", votes: 12, confidence: 91 }
+                // The original code assumes 'r' is a string, but the comment suggests an object. This needs clarification.
+                // For now, assuming 'r' is a string (constituency name) based on 'this.constituencies.filter(c => c.toLowerCase().includes(query.toLowerCase()))'
+                html += `<div class="search-result-item" data-constituency="${r}">
+                            ${r}
+                        </div>`;
+            });
+            console.log('SearchManager: Generated search results HTML:', html);
+            this.results.innerHTML = html;
+            this.results.style.display = 'block !important';
+            this.highlightIndex = -1;
+            this.results.querySelectorAll('.search-result-item').forEach(item => {
+                item.addEventListener('mousedown', () => this.select(item.dataset.constituency));
+            });
+        }
+        hideResults() {
+            // Add a small delay to allow results to render before hiding
+            setTimeout(() => {
+                if (this.results) {
+                    this.results.style.display = 'none';
+                }
+            }, 100); // 100ms delay
+        }
+        updateHighlight(items) {
+            items.forEach((item,i) => {
+                item.classList.toggle('active', i === this.highlightIndex);
+            });
+        }
+        handleSearch() {
+            const val = this.input.value.trim();
+            if (!val) return;
+            const exact = this.constituencies.find(c => c.toLowerCase() === val.toLowerCase());
+            if (exact) this.select(exact);
+            else {
+                const partial = this.constituencies.filter(c => c.toLowerCase().includes(val.toLowerCase()))[0];
+                if (partial) this.select(partial);
+                else this.showError('No matching constituency found.');
+            }
+        }
+        select(name) {
+            if (!name) return;
+            currentConstituency = name;
+            if (this.input) this.input.value = name;
+            this.hideResults();
+            this.app.loadConstituencyAnalysis(name);
+        }
+        showError(msg) {
+            this.app.showToastNotification(msg, 'error');
+            this.hideResults(); // Also hide results when showing an error
+        }
+    }
+
+    // Theme Manager for light/dark and chart re-style
+    class ThemeManager {
+        constructor() {
+            this.theme = localStorage.getItem('theme') || 'light';
+            this.init();
+        }
+        init() {
+            this.applyTheme(this.theme);
+            const toggle = document.getElementById('themeToggle');
+            if (toggle) toggle.addEventListener('click', () => this.toggle());
+        }
+        toggle() {
+            this.theme = this.theme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', this.theme);
+            this.applyTheme(this.theme);
+        }
+        applyTheme(t) {
+            document.body.classList.remove('light','dark');
+            document.body.classList.add(t);
+            document.body.setAttribute('data-theme', t);
+            const icon = document.getElementById('themeIcon');
+            if (icon) icon.className = t === 'dark' ? 'fas fa-moon rotate-slow' : 'fas fa-sun rotate-slow';
+            // Update charts colors appropriately:
+            window.chartManager && window.chartManager.charts && Object.values(window.chartManager.charts).forEach(c => {
+                const colors = getThemeColors();
+                if (c.options.scales) {
+                    c.options.scales.x.ticks.color = colors.textColor;
+                    c.options.scales.y.ticks.color = colors.textColor;
+                    c.options.scales.x.grid.color = colors.gridColor;
+                    c.options.scales.y.grid.color = colors.gridColor;
+                }
+                if (c.options.plugins?.legend) c.options.plugins.legend.labels.color = colors.textColor;
+                if (c.options.plugins?.title) c.options.plugins.title.color = colors.textColor;
+                if (c.options.plugins?.tooltip) {
+                    c.options.plugins.tooltip.backgroundColor = colors.tooltipBg;
+                    c.options.plugins.tooltip.titleColor = colors.textColor;
+                    c.options.plugins.tooltip.bodyColor = colors.textColor;
+                }
+                c.update();
+            });
+        }
+    }
+
+    // Main Application Class - Manages all components & logic
+    class VotingAnalyticsApp {
+        constructor() {
+            this.api = new APIService();
+            this.chartMgr = new ChartManager();
+            this.wsMgr = new WebSocketManager(this.api, this.chartMgr);
+            this.themeMgr = new ThemeManager();
+            this.searchMgr = new SearchManager(this.api, this.chartMgr, this);
+            this.initialized = false;
+            this.candidates = [];
+            this.rotationIndex = 0;
+            this.rotationCount = 5;
+            this.rotationInterval = null;
+            this.liveVoteCount = 0;
+            this.predictionConfidence = 0;
+            this.threeJs = {};
+            this.init();
+        }
+        async init() {
+            console.log('VotingAnalyticsApp.init() called.');
+            connectionManager.showLoading('Initializing...');
+            this.loadTimeout = setTimeout(() => {
+                if (!this.initialized) this.handleError(new Error('Timeout loading data'));
+            }, 15000);
+
+            try {
+                console.log('Fetching health...');
+                await this.api.getHealth();
+                console.log('Health fetched. Loading constituencies...');
+                await this.searchMgr.loadConstituencies();
+                console.log('Constituencies loaded. Loading historical data...');
+                await this.loadHistoricalData();
+                console.log('Historical data loaded. Creating prediction chart...');
+                await this.createPredictionChart();
+                console.log('Prediction chart created. Creating turnout heatmap...');
+                await this.createTurnoutHeatmap();
+                console.log('Turnout heatmap created. Connecting to WebSocket...');
+                this.wsMgr.connect();
+                console.log('WebSocket connected. Handling 3D visualization update...');
+                this.handle3DVisualizationUpdate();
+                // this.initialized = true; // Moved to handleInitialData
+                clearTimeout(this.loadTimeout);
+                connectionManager.hideLoading();
+                this.setupUIEvents();
+                console.log('Avalanche Voting Analytics Ready.');
+            } catch(e) { 
+                console.error('Error during init:', e);
+                this.handleError(e); 
+            }
+        }
+        async loadHistoricalData() {
+            try {
+                const data = await this.api.getHistoricalVotes();
+                if (data && data.success) {
+                    this.chartMgr.createChart('historicalVotesChart', 'bar', {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Votes',
+                            data: data.data,
+                            backgroundColor: ['rgba(232,65,66,0.7)','rgba(45,116,218,0.7)'],
+                            borderColor: ['rgba(232,65,66,1)','rgba(45,116,218,1)'],
+                            borderWidth:1,
+                            borderRadius:5
+                        }]
+                    }, {
+                        plugins:{
+                            legend:{display:false},
+                            title:{
+                                display:true,
+                                text: 'Total Votes Over Time',
+                                font: { size: 20, weight: 'bold' },
+                                color: getThemeColors().textColor
+                            }
+                        },
+                        scales:{
+                            x:{
+                                title:{
+                                    display:true,
+                                    text: 'Election Year',
+                                    font: { size: 16, weight: 'bold' },
+                                    color: getThemeColors().textColor
+                                },
+                                ticks:{
+                                    font: { size: 14, weight: 'bold' },
+                                    color: getThemeColors().textColor
+                                }
+                            },
+                            y:{
+                                title:{
+                                    display:true,
+                                    text: 'Total Votes',
+                                    font: { size: 16, weight: 'bold' },
+                                    color: getThemeColors().textColor
+                                },
+                                ticks:{
+                                    font: { size: 14, weight: 'bold' },
+                                    color: getThemeColors().textColor
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch(e) {
+                console.error('Loading historical votes failed:', e);
+            }
+        }
+        handleVotingUpdate(data) {
+            console.log('App: handleVotingUpdate called with data:', data);
+            if (!this.initialized) {
+                this.handleInitialData(data);
+                return;
+            }
             if (data.election_data) {
-                this.updateVoteDisplay(data.election_data);
+                console.log('App: Updating votes with election_data:', data.election_data);
+                this.updateVotes(data.election_data);
             }
-            
             if (data.ai_insights) {
-<<<<<<< HEAD
-=======
+                console.log('App: Updating AI insights with ai_insights:', data.ai_insights);
                 this.updateAIInsights(data.ai_insights);
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                this.updateIntelligenceHub(data.ai_insights);
             }
-            
             if (data.analytics) {
-                this.updateAnalytics(data);
+                console.log('App: Updating analytics with analytics:', data.analytics);
+                this.updateAnalytics(data.analytics);
+                // Also update demographic charts on subsequent updates if data is present
+                if (data.analytics.demographics) {
+                    console.log('App: Updating demographic charts with demographics:', data.analytics.demographics);
+                    this.updateDemographicChartsData(data.analytics.demographics);
+                }
             }
         }
-        
-        handleBlockchainUpdate(data) {
-            if (data.network_stats) {
-                this.updateNetworkStats(data.network_stats);
+        handleInitialData(data) {
+            console.log('handleInitialData called with data:', data);
+            if (this.initialized) {
+                console.log('handleInitialData already initialized. Returning.');
+                return;
             }
-        }
-        
-        handlePredictionUpdate(data) {
-            const confidenceEl = document.getElementById('confidenceText');
-            const meterEl = document.getElementById('confidenceMeter');
+            clearTimeout(this.loadTimeout);
+
+            // Initialize candidate charts
+            this.chartMgr.createChart('votesPerCandidateChart', 'bar', {
+                labels: [],
+                datasets: [{
+                    label: 'Votes',
+                    data: [],
+                    backgroundColor: this.chartMgr.colors.avalanche
+                }]
+            });
+            this.chartMgr.createChart('votePercentageShareChart', 'doughnut', {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: this.chartMgr.colors.avalanche
+                }]
+            });
+            // Initialize demographic charts - handled by initializeDemographicCharts
+            // this.chartMgr.createChart('ageGroupDistributionChart', 'bar', {
+            //     labels: [],
+            //     datasets: [{
+            //         label: 'Votes',
+            //         data: [],
+            //         backgroundColor: this.chartMgr.colors.rainbow
+            //     }]
+            // });
+            // this.chartMgr.createChart('genderVotingTrendsChart', 'pie', {
+            //     labels: [],
+            //     datasets: [{
+            //         data: [],
+            //         backgroundColor: ['#2D74DA', '#E84142', '#00D4AA']
+            //     }]
+            // });
+            // this.chartMgr.createChart('locationParticipationChart', 'bar', {
+            //     labels: [],
+            //     datasets: [{
+            //         label: 'Votes',
+            //         data: [],
+            //         backgroundColor: this.chartMgr.colors.gradient
+            //     }]
+            // });
+
+            this.updateDashboard(data.analytics || {}, 'Overall');
+
+            if (data.election_data?.candidates) {
+                this.candidates = data.election_data.candidates;
+                // Initial display of top 5 overall
+                this.updateCandidateCharts(this.candidates);
+                this.updateVotePercentageChart(this.candidates);
+                // Initialize demographic charts
+                this.initializeDemographicCharts(data.analytics?.demographics || {});
+                this.rotateCandidates(); // Start rotation after initial display
+            }
             
-            if (confidenceEl && data.confidence) {
-                confidenceEl.textContent = `${Math.round(data.confidence)}%`;
-            }
+            // Initialize demographic charts
+            this.initializeDemographicCharts(data.analytics?.demographics || {});
             
-            if (meterEl && data.confidence) {
-                meterEl.style.width = `${data.confidence}%`;
-            }
-            
-            if (data.predictions) {
-                this.updatePredictionText(data.predictions);
-            }
+            this.setupUIEvents();
+            connectionManager.hideLoading();
+            this.initialized = true; // Moved to the end
         }
-        
-        handleVoteCountUpdate(data) {
-            const totalVotesEl = document.getElementById('total-votes');
-            const liveCountEl = document.getElementById('liveVoteCount');
-            
-            if (totalVotesEl && data.total_votes) {
-                totalVotesEl.textContent = data.total_votes.toLocaleString();
-                liveVoteCount = data.total_votes;
-            }
-            
-            if (liveCountEl && data.total_votes) {
-                liveCountEl.textContent = data.total_votes.toLocaleString();
-            }
-            
-            // Update charts with new vote data
-            if (data.votes_by_candidate) {
-                this.updateVoteCharts(data.votes_by_candidate);
-            }
+        updateVotes(election) {
+            console.log('App: updateVotes called with election:', election);
+            this.liveVoteCount = election.current_turnout || this.liveVoteCount;
+            console.log("App: Current live vote count:", this.liveVoteCount); // Added log
+            const liveVoteCountEl = document.getElementById('liveVoteCount'); // Target the correct element
+            if (liveVoteCountEl) liveVoteCountEl.textContent = this.liveVoteCount.toLocaleString();
+            // Update charts for candidates - handled by rotateCandidates or initial load
+            // if (election.candidates) {
+            //     console.log('App: Updating candidate charts with candidates:', election.candidates);
+            //     this.updateCandidateCharts(election.candidates);
+            //     this.updateVotePercentageChart(election.candidates);
+            // }
         }
-        
-        handleNewTransaction(data) {
-            this.addTransactionToFeed(data);
+        updateCandidateCharts(candidates) {
+            console.log('updateCandidateCharts called with candidates:', candidates);
+            if (!candidates?.length) return;
+            let sorted = candidates.filter(c => c.name !== 'Other').slice().sort((a,b)=> b.votes - a.votes).slice(0,5);
+            let labels = sorted.map(c=>c.name);
+            let votes = sorted.map(c=>c.votes);
+            console.log(`DEBUG: votesPerCandidateChart - Labels: ${labels}, Votes: ${votes}`);
+            this.chartMgr.updateChart('votesPerCandidateChart', {
+                labels,
+                datasets: [{
+                    label:'Votes',
+                    data:votes,
+                    backgroundColor:this.chartMgr.colors.avalanche
+                }]
+            });
         }
-        
-        handle3DVisualizationUpdate(data) {
-            if (window.votingVisualization) {
-                window.votingVisualization.updateData(data);
-            }
+
+        updateVotePercentageChart(candidates) {
+            console.log('updateVotePercentageChart called with candidates:', candidates);
+            if (!candidates?.length) return;
+            let sorted = candidates.filter(c => c.name !== 'Other').slice().sort((a,b)=> b.votes - a.votes).slice(0,5);
+            let labels = sorted.map(c=>c.name);
+            let percentages = sorted.map(c=>c.percentage);
+            console.log(`DEBUG: votePercentageShareChart - Labels: ${labels}, Percentages: ${percentages}`);
+            this.chartMgr.updateChart('votePercentageShareChart', {
+                labels,
+                datasets: [{
+                    data:percentages,
+                    backgroundColor:this.chartMgr.colors.avalanche
+                }]
+            });
         }
-        
-        updateVoteDisplay(electionData) {
-            if (electionData.candidates) {
-                // Update candidate displays
-                const candidateData = electionData.candidates.map(c => ({
-                    name: c.name,
-                    votes: c.votes || electionData.votes[c.id] || 0,
-                    percentage: c.percentage || 0
-                }));
-                
-                this.updateCandidateCharts(candidateData);
-            }
-        }
-        
-<<<<<<< HEAD
-=======
         updateAIInsights(insights) {
-            const insightsContainer = document.getElementById('summary-text');
-            if (insightsContainer && insights.length > 0) {
-                const insightHtml = insights.slice(0, 3).map(insight => `
-                    <div class="ai-insight-item mb-3">
-                        <h6 class="text-avalanche-blue">${insight.title}</h6>
-                        <p class="mb-1">${insight.description}</p>
-                        <small class="text-muted">Confidence: ${Math.round(insight.confidence * 100)}%</small>
-                    </div>
-                `).join('');
-                
-                insightsContainer.innerHTML = insightHtml;
+            console.log('updateAIInsights called with insights:', insights);
+            if (!insights?.length) return;
+
+            const summaryTextContainer = document.getElementById('analysis-summary-text');
+            if (summaryTextContainer) {
+                summaryTextContainer.innerHTML = ''; // Clear previous content
+                if (typeof insights[0] === 'string') {
+                    // If insights are strings, display them as plain text
+                    console.warn('updateAIInsights: insights are strings, expected objects. Displaying as plain text.');
+                    summaryTextContainer.innerHTML = insights.slice(0,3).map(i => `
+                        <div class="narrative-insight mb-3">
+                            <p>${i}</p>
+                        </div>`).join('');
+                } else {
+                    // If insights are objects, process them as before
+                    summaryTextContainer.innerHTML = insights.slice(0,3).map(i => {
+                        const title = i.title || 'Insight unavailable';
+                        const description = i.description || 'No description provided.';
+                        const confidence = isNaN(i.confidence) ? 'N/A' : `${Math.round(i.confidence * 100)}%`;
+                        const importance = i.importance || 'N/A';
+                        return `
+                            <div class="narrative-insight mb-3">
+                                <h6 class="text-avalanche-blue"><i class="fas fa-lightbulb me-2"></i>${title}</h6>
+                                <p>${description}</p>
+                                <div class="insight-meta mt-2">
+                                    <span class="badge bg-avalanche-green">Confidence: ${confidence}</span>
+                                    <span class="badge bg-avalanche-orange ms-2">Priority: ${importance}/10</span>
+                                </div>
+                            </div>`;
+                    }).join('');
+                }
+            }
+
+            const otherInsightsContainer = document.getElementById('other-insights-content');
+            if (otherInsightsContainer) {
+                otherInsightsContainer.innerHTML = ''; // Clear previous content
+                if (typeof insights[0] === 'string') {
+                    // If insights are strings, display them as plain text
+                    otherInsightsContainer.innerHTML = insights.map(i => `
+                        <div class="narrative-insight mb-3">
+                            <p>${i}</p>
+                        </div>`).join('');
+                } else {
+                    // If insights are objects, process them as before
+                    otherInsightsContainer.innerHTML = insights.map(i => {
+                        const title = i.title || 'Insight unavailable';
+                        const description = i.description || 'No description provided.';
+                        const confidence = isNaN(i.confidence) ? 'N/A' : `${Math.round(i.confidence * 100)}%`;
+                        const importance = i.importance || 'N/A';
+                        return `
+                            <div class="narrative-insight mb-3">
+                                <h6 class="insight-title"><i class="fas fa-lightbulb me-2"></i>${title}</h6>
+                                <p class="insight-description">${description}</p>
+                                <div class="insight-meta mt-2">
+                                    <span class="badge bg-confidence">Confidence: ${confidence}</span>
+                                    <span class="badge bg-priority ms-2">Priority: ${importance}/10
+                                </div>
+                            </div>`;
+                    }).join('');
+                }
             }
         }
-        
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-        updateAnalytics(data) {
-            if (!data) return;
-            // Update various stat elements
+        updateAnalytics(analytics) {
+            console.log('updateAnalytics called with analytics:', analytics);
+            if (!analytics) return;
+
             const totalVotesEl = document.getElementById('total-votes');
-            if (totalVotesEl && data.election_data?.current_turnout) {
-                totalVotesEl.textContent = data.election_data.current_turnout.toLocaleString();
+            if (totalVotesEl) {
+                if (analytics.candidates) {
+                    const totalVotes = analytics.candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
+                    totalVotesEl.textContent = totalVotes.toLocaleString();
+                } else {
+                    totalVotesEl.textContent = '0';
+                }
             }
 
             const totalInsightsEl = document.getElementById('total-insights');
-            if (totalInsightsEl && data.ai_insights) {
-                totalInsightsEl.textContent = data.ai_insights.length;
+            if (totalInsightsEl) {
+                if (analytics.ai_insights) {
+                    totalInsightsEl.textContent = analytics.ai_insights.length;
+                } else {
+                    totalInsightsEl.textContent = '0';
+                }
             }
-            
+
             const avgConfidenceEl = document.getElementById('avg-confidence');
-            if (avgConfidenceEl && data.analytics?.ai_predictions?.confidence) {
-                const confidence = Math.round(data.analytics.ai_predictions.confidence * 100);
-                avgConfidenceEl.textContent = `${confidence}%`;
+            if (avgConfidenceEl) {
+                if (analytics.ai_predictions && analytics.ai_predictions.confidence) {
+                    avgConfidenceEl.textContent = `${Math.round(analytics.ai_predictions.confidence * 100)}%`;
+                } else {
+                    avgConfidenceEl.textContent = 'N/A';
+                }
             }
-            
-            const highPriorityEl = document.getElementById('high-importance');
-            if (highPriorityEl && data.analytics?.security_status) {
-                highPriorityEl.textContent = data.analytics.security_status.anomalies_detected || '0';
+
+            const highImportanceEl = document.getElementById('high-importance');
+            if (highImportanceEl) {
+                let maxImportance = 'N/A';
+                if (analytics.ai_insights && analytics.ai_insights.length > 0) {
+                    const insightsWithImportance = analytics.ai_insights.filter(i => typeof i.importance === 'number');
+                    if (insightsWithImportance.length > 0) {
+                        maxImportance = Math.max(...insightsWithImportance.map(i => i.importance));
+                    }
+                }
+                highImportanceEl.textContent = maxImportance;
+            }
+        }
+        rotateCandidates() {
+            if (this.rotationInterval) clearInterval(this.rotationInterval);
+            this.rotationInterval = setInterval(() => {
+                if(this.candidates.length <= this.rotationCount) {
+                    clearInterval(this.rotationInterval);
+                    return;
+                }
+                let start = this.rotationIndex % this.candidates.length;
+                let chunk = this.candidates.slice(start, start + this.rotationCount);
+                if (chunk.length < this.rotationCount) chunk.push(...this.candidates.slice(0,this.rotationCount - chunk.length));
+                this.updateCandidateCharts(chunk);
+                this.updateVotePercentageChart(chunk);
+                this.rotationIndex += this.rotationCount;
+            }, 6000);
+        }
+        setupUIEvents() {
+            const cycleBtn = document.getElementById('cycleCandidatesButton');
+            if (cycleBtn) {
+                cycleBtn.addEventListener('click', () => this.rotateCandidates());
+            }
+
+            // Add event listeners for stat cards
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const statType = card.dataset.stat;
+                    let title = '';
+                    let content = '';
+
+                    switch (statType) {
+                        case 'total-votes':
+                            title = 'Total Votes';
+                            content = `<p><strong>Current Total Votes:</strong> ${document.getElementById('total-votes').textContent}</p>
+                                       <p>This represents the cumulative number of votes recorded on the Avalanche blockchain.</p>`;
+                            break;
+                        case 'total-insights':
+                            title = 'AI Insights';
+                            content = `<p><strong>Total AI Insights:</strong> ${document.getElementById('total-insights').textContent}</p>
+                                       <p>These are real-time analytical observations generated by the AI agent, highlighting key trends and anomalies.</p>`;
+                            break;
+                        case 'avg-confidence':
+                            title = 'Average AI Confidence';
+                            content = `<p><strong>Average Confidence:</strong> ${document.getElementById('avg-confidence').textContent}</p>
+                                       <p>This metric indicates the AI\'s certainty in its predictions and analyses across various data points.</p>`;
+                            break;
+                        case 'high-importance':
+                            title = 'High Priority Alerts';
+                            content = `<p><strong>High Priority Insights:</strong> ${document.getElementById('high-importance').textContent}</p>
+                                       <p>These are critical insights flagged by the AI due to their significant impact or unusual patterns.</p>`;
+                            break;
+                        default:
+                            title = 'Detail';
+                            content = '<p>No specific details available for this statistic.</p>';
+                    }
+                    this.showStatDetailModal(title, content);
+                });
+            });
+
+            // Fix for Blocked aria-hidden warning
+            const statDetailModal = document.getElementById('statDetailModal');
+            if (statDetailModal) {
+                statDetailModal.addEventListener('hidden.bs.modal', () => {
+                    // Return focus to the element that opened the modal, or a sensible default
+                    const lastFocusedElement = document.activeElement; // This might be the close button
+                    if (lastFocusedElement && lastFocusedElement.tagName === 'BUTTON') {
+                        lastFocusedElement.blur(); // Remove focus from the close button
+                    }
+                    // Optionally, return focus to the stat card that was clicked
+                    // This would require storing which card was clicked
+                });
+            }
+
+            const viewGlobeBtn = document.getElementById('viewGlobeBtn');
+            const viewMapBtn = document.getElementById('viewMapBtn');
+            const viewParticlesBtn = document.getElementById('viewParticlesBtn');
+
+            if (viewGlobeBtn) {
+                viewGlobeBtn.addEventListener('click', () => {
+                    this.showToastNotification('Globe view is already active.', 'info');
+                });
+            }
+
+            if (viewMapBtn) {
+                viewMapBtn.addEventListener('click', () => {
+                    this.showToastNotification('Map view is coming soon!', 'info');
+                });
+            }
+
+            if (viewParticlesBtn) {
+                viewParticlesBtn.addEventListener('click', () => {
+                    this.showToastNotification('Particles view is coming soon!', 'info');
+                });
             }
         }
 
-        updateIntelligenceHub(insights) {
-            const hubContainer = document.getElementById('other-insights-content');
-            if (hubContainer && insights.length > 0) {
-                const insightHtml = insights.map(insight => `
-                    <div class="narrative-insight mb-3">
-<<<<<<< HEAD
-                        <h6 class="insight-title"><i class="fas fa-lightbulb me-2"></i>${insight.title}</h6>
-                        <p class="insight-description">${insight.description}</p>
-                        <div class="insight-meta mt-2">
-                            <span class="badge bg-confidence">Confidence: ${Math.round(insight.confidence * 100)}%</span>
-                            <span class="badge bg-priority ms-2">Priority: ${insight.importance}/10</span>
-=======
-                        <h6 class="text-avalanche-blue"><i class="fas fa-lightbulb me-2"></i>${insight.title}</h6>
-                        <p>${insight.description}</p>
-                        <div class="insight-meta mt-2">
-                            <span class="badge bg-avalanche-green">Confidence: ${Math.round(insight.confidence * 100)}%</span>
-                            <span class="badge bg-avalanche-orange ms-2">Priority: ${insight.importance}/10</span>
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+        initializeDemographicCharts(demographics) {
+            if (!demographics) return;
+
+            const ageCounts = (demographics.age_groups && demographics.age_groups.counts) ? demographics.age_groups.counts : {};
+            const genderCounts = (demographics.gender && demographics.gender.counts) ? demographics.gender.counts : {};
+            const locationCounts = (demographics.locations && demographics.locations.top_10_counts) ? demographics.locations.top_10_counts : {};
+
+            this.chartMgr.createChart('ageGroupDistributionChart', 'bar', {
+                labels: Object.keys(ageCounts),
+                datasets: [{
+                    label: 'Votes',
+                    data: Object.values(ageCounts),
+                    backgroundColor: this.chartMgr.colors.rainbow
+                }]
+            });
+
+            this.chartMgr.createChart('genderVotingTrendsChart', 'pie', {
+                labels: Object.keys(genderCounts),
+                datasets: [{
+                    data: Object.values(genderCounts),
+                    backgroundColor: ['#2D74DA', '#E84142', '#00D4AA']
+                }]
+            });
+
+            this.chartMgr.createChart('locationParticipationChart', 'bar', {
+                labels: Object.keys(locationCounts),
+                datasets: [{
+                    label: 'Votes',
+                    data: Object.values(locationCounts),
+                    backgroundColor: this.chartMgr.colors.gradient
+                }]
+            });
+        }
+
+        updateDemographicChartsData(demographics) {
+            if (!demographics) return;
+
+            const ageCounts = (demographics.age_groups && demographics.age_groups.counts) ? demographics.age_groups.counts : {};
+            const genderCounts = (demographics.gender && demographics.gender.counts) ? demographics.gender.counts : {};
+            const locationCounts = (demographics.locations && demographics.locations.top_10_counts) ? demographics.locations.top_10_counts : {};
+
+            if (this.chartMgr.charts['ageGroupDistributionChart']) {
+                this.chartMgr.updateChart('ageGroupDistributionChart', {
+                    labels: Object.keys(ageCounts),
+                    datasets: [{
+                        label: 'Votes',
+                        data: Object.values(ageCounts),
+                        backgroundColor: this.chartMgr.colors.rainbow
+                    }]
+                });
+            }
+
+            if (this.chartMgr.charts['genderVotingTrendsChart']) {
+                this.chartMgr.updateChart('genderVotingTrendsChart', {
+                    labels: Object.keys(genderCounts),
+                    datasets: [{
+                        data: Object.values(genderCounts),
+                        backgroundColor: ['#2D74DA', '#E84142', '#00D4AA']
+                    }]
+                });
+            }
+
+            if (this.chartMgr.charts['locationParticipationChart']) {
+                this.chartMgr.updateChart('locationParticipationChart', {
+                    labels: Object.keys(locationCounts),
+                    datasets: [{
+                        label: 'Votes',
+                        data: Object.values(locationCounts),
+                        backgroundColor: this.chartMgr.colors.gradient
+                    }]
+                });
+            }
+        }
+
+        clearDashboardContainers() {
+            const containersToClear = [
+                'analysis-summary-text',
+                'other-insights-content',
+                'ai-insights', // Added to clear potential duplication in AI insights section
+                // 'demographic-analytics', // Removed to prevent clearing chart canvases
+                'prediction-chart-container', // Added for Electoral Outcome Forecast
+                'turnout-heatmap-container', // Added for Turnout Prediction with AI Modeling
+            ];
+
+            containersToClear.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.innerHTML = '';
+                }
+            });
+        }
+
+        updateDashboard(data, name='Overall') {
+            console.log('App: Updating dashboard for:', name, 'with data:', data);
+            this.clearDashboardContainers();
+
+            const constituencyHeader = document.getElementById('constituency-header');
+            const constituencyHeaderName = document.getElementById('constituency-header-name');
+            const backToOverallBtn = document.getElementById('back-to-overall');
+
+            if (name === "Overall") {
+                constituencyHeader.classList.add('d-none');
+            }
+            else {
+                constituencyHeader.classList.remove('d-none');
+                constituencyHeaderName.textContent = `Showing Analytics for: ${name}`;
+                if (backToOverallBtn) {
+                    backToOverallBtn.onclick = () => this.showOverallDashboard();
+                }
+            }
+
+            const candidates = (data.candidates || []).filter(c => c.name !== 'Other');
+            const demographics = data.demographics || {};
+            const aiInsights = data.ai_insights || [];
+
+            // Removed summaryEl handling, as updateAIInsights handles populating #summary-text
+
+            if (candidates.length > 0) {
+                console.log('App: Dashboard updating candidate charts with:', candidates);
+                this.updateCandidateCharts(candidates);
+                this.updateVotePercentageChart(candidates);
+            }
+
+            console.log('App: Dashboard creating demographic charts with:', demographics);
+            this.updateDemographicChartsData(demographics);
+            console.log('App: Dashboard updating AI insights with:', aiInsights);
+            this.updateAIInsights(aiInsights); // This will populate #summary-text and #other-insights-content
+            console.log('App: Dashboard updating analytics with:', data);
+            this.updateAnalytics(data);
+
+            console.log("App: Dashboard updated successfully.");
+            console.log(`[After updateDashboard] Canvas element for votesPerCandidateChart exists:`, !!document.getElementById('votesPerCandidateChart'));
+            console.log(`[After updateDashboard] Canvas element for votePercentageShareChart exists:`, !!document.getElementById('votePercentageShareChart'));
+        }
+
+        async createPredictionChart() {
+            console.log('createPredictionChart called.');
+            try {
+                const data = await this.api.getLivePredictions();
+                console.log('Data from getLivePredictions:', data);
+                if (data && data.predictions) {
+                    const labels = data.predictions.map(p => p.name);
+                    const probabilities = data.predictions.map(p => p.probability);
+
+                    this.chartMgr.createChart('predictionChart', 'bar', {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Prediction Probability',
+                            data: probabilities,
+                            backgroundColor: this.chartMgr.colors.gradient,
+                            borderColor: this.chartMgr.colors.gradient.map(c => c.replace('80', '')),
+                            borderWidth: 1
+                        }]
+                    }, {
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false }
+                        }
+                    });
+
+                    const predictionTextEl = document.querySelector('.prediction-text');
+                    if (predictionTextEl) {
+                        predictionTextEl.textContent = `AI is predicting ${data.leading_candidate} will win with ${data.predictions[0].probability.toFixed(1)}% probability`;
+                    }
+                    const confidenceMeterEl = document.getElementById('confidenceMeter');
+                    const confidenceTextEl = document.getElementById('confidenceText');
+                    if (confidenceMeterEl && confidenceTextEl) {
+                        confidenceMeterEl.style.width = `${data.confidence}%`;
+                        confidenceTextEl.textContent = `${data.confidence}%`;
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to create prediction chart:', e);
+            }
+        }
+
+        async createTurnoutHeatmap() {
+            console.log('createTurnoutHeatmap called.');
+            try {
+                const data = await this.api.request('/api/analytics/turnout-heatmap');
+                console.log('Data from turnout-heatmap:', data);
+                if (data && data.success) {
+                    // For a bar chart, we need labels and data arrays
+                    const labels = data.data.map(d => d.constituency || d.label); // Use constituency name or label for bar labels
+                    const turnoutData = data.data.map(d => d.r); // Use 'r' value for bar height
+
+                    this.chartMgr.createChart('turnoutHeatmapChart', 'bar', {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Voter Turnout',
+                            data: turnoutData,
+                            backgroundColor: this.chartMgr.colors.avalanche, // Use a standard color palette
+                            borderColor: this.chartMgr.colors.avalanche.map(c => c.replace('80','')),
+                            borderWidth: 1,
+                            borderRadius: 5 // Rounded bars
+                        }]
+                    }, {
+                        plugins: {
+                            tooltip: {
+                                // Tooltip settings from defaultOptions will apply
+                                // Custom callbacks can be added if needed
+                            },
+                            title:{
+                                display:true,
+                                text: 'Top Constituencies by Voter Turnout',
+                                font: { size: 20, weight: 'bold' },
+                                color: getThemeColors().textColor
+                            }
+                        },
+                        scales:{
+                            x:{
+                                display: true, // Display X-axis for labels
+                                title:{
+                                    display:true,
+                                    text: 'Constituency',
+                                    font: { size: 16, weight: 'bold' },
+                                    color: getThemeColors().textColor
+                                },
+                                ticks:{
+                                    font: { size: 14, weight: 'bold' },
+                                    color: getThemeColors().textColor
+                                }
+                            },
+                            y:{
+                                display: true, // Display Y-axis for values
+                                title:{}
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to create turnout heatmap:', e);
+            }
+        }
+
+        showOverallDashboard() {
+            const constituencySection = document.getElementById('constituency-analysis');
+            const comprehensiveSection = document.getElementById('comprehensive-analysis');
+            const candidateSection = document.getElementById('candidate-results');
+            const demographicSection = document.getElementById('demographic-analytics');
+            const historicalSection = document.getElementById('historical-analysis-section');
+            const heatmapSection = document.getElementById('heatmap-section');
+            const visualizationSection = document.getElementById('visualization-section-id');
+            const heroSection = document.querySelector('.hero-section');
+
+            if (constituencySection) constituencySection.classList.add('d-none');
+            if (comprehensiveSection) comprehensiveSection.classList.remove('d-none');
+            if (candidateSection) candidateSection.classList.remove('d-none');
+            if (demographicSection) demographicSection.classList.remove('d-none');
+            if (historicalSection) historicalSection.classList.remove('d-none');
+            if (heatmapSection) heatmapSection.classList.remove('d-none');
+            if (visualizationSection) visualizationSection.classList.remove('d-none');
+            if (heroSection) heroSection.classList.remove('d-none');
+
+            const constituencyHeader = document.getElementById('constituency-header');
+            if (constituencyHeader) constituencyHeader.classList.add('d-none');
+
+            const feedWrapper = document.querySelector('.feed-content-wrapper');
+            if (feedWrapper) feedWrapper.classList.remove('d-none');
+
+            this.searchMgr.input.value = '';
+            currentConstituency = null;
+        }
+        async loadConstituencyAnalysis(name) {
+            connectionManager.showLoading(`Loading ${name} Analysis...`);
+            try {
+                const data = await this.api.getConstituencyAnalysis(name);
+                if (data?.success) {
+                    this.displayConstituencyAnalysis(name, data);
+                } else {
+                    console.warn('Failed to load analysis for', name);
+                }
+            } catch(e) {
+                console.error('Error loading constituency analysis:', e);
+            }
+            finally {
+                connectionManager.hideLoading();
+            }
+        }
+        displayConstituencyAnalysis(name, data) {
+            console.log('displayConstituencyAnalysis called with data:', data); // Added log
+            if (!data || !data.constituency_name) {
+                this.showToastNotification(`No analysis data available for ${name}.`, 'warning');
+                console.warn('Missing analysis data for constituency', name, data);
+                return;
+            }
+
+            const feedWrapper = document.querySelector('.feed-content-wrapper');
+            if (feedWrapper) feedWrapper.classList.add('d-none');
+
+            const comprehensiveSection = document.getElementById('comprehensive-analysis');
+            const candidateSection = document.getElementById('candidate-results');
+            const demographicSection = document.getElementById('demographic-analytics');
+            const historicalSection = document.getElementById('historical-analysis-section');
+            const heatmapSection = document.getElementById('heatmap-section');
+            const visualizationSection = document.getElementById('visualization-section-id');
+            const constituencySection = document.getElementById('constituency-analysis');
+            const contentDisplay = document.getElementById('constituency-details-content');
+            const nameDisplay = document.getElementById('constituency-name-display');
+            const heroSection = document.querySelector('.hero-section');
+
+            if (!comprehensiveSection || !candidateSection || !demographicSection || !constituencySection || !contentDisplay || !nameDisplay || !historicalSection || !heatmapSection || !visualizationSection || !heroSection) {
+                console.error("One or more display sections are missing from the DOM for constituency analysis.");
+                return;
+            }
+
+            comprehensiveSection.classList.add('d-none');
+            candidateSection.classList.add('d-none');
+            demographicSection.classList.add('d-none');
+            historicalSection.classList.add('d-none');
+            heatmapSection.classList.add('d-none');
+            visualizationSection.classList.add('d-none');
+            heroSection.classList.add('d-none');
+
+            nameDisplay.textContent = name;
+
+            const analysisHtml = `
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-bar me-2 text-avalanche-cyan"></i>
+                                Votes Per Candidate
+                            </h5>
+                            <div class="chart-container">
+                                <canvas id="constituencyVotesPerCandidateChart"></canvas>
+                            </div>
                         </div>
                     </div>
-                `).join('');
-                
-                hubContainer.innerHTML = insightHtml;
-            }
-        }
-        
-        updateTransactionFeed(transactions) {
-            const feedContainer = document.getElementById('transactionFeed');
-            if (!feedContainer || !transactions.length) return;
-            
-            // Show latest transaction
-            const latestTx = transactions[transactions.length - 1];
-            if (latestTx && latestTx.transaction) {
-                const tx = latestTx.transaction;
-                const txElement = document.createElement('div');
-                txElement.className = 'transaction-item';
-                txElement.innerHTML = `
-                    <span class="tx-hash">${tx.tx_hash.substring(0, 16)}...</span>
-                    <span class="tx-details">Vote for Candidate ${tx.candidate_id}</span>
-                    <span class="tx-amount">${(tx.gas_used / 1000000).toFixed(3)} AVAX</span>
-                `;
-                
-                feedContainer.innerHTML = '';
-                feedContainer.appendChild(txElement);
-                
-                // Fade out after 3 seconds
-                setTimeout(() => {
-                    txElement.style.opacity = '0.6';
-                }, 3000);
-            }
-        }
-        
-        updateNetworkStats(stats) {
-            const tpsEl = document.getElementById('tps-counter');
-            const gasPriceEl = document.getElementById('gas-price');
-            
-            if (tpsEl && stats.live_tps) {
-                tpsEl.textContent = `${stats.live_tps}k`;
-            }
-            
-            if (gasPriceEl && stats.avg_fee) {
-                gasPriceEl.textContent = stats.avg_fee;
-            }
-        }
-        
-        updateCandidateCharts(candidateData) {
-<<<<<<< HEAD
-            const topCandidates = [...candidateData].sort((a, b) => b.votes - a.votes).slice(0, 5);
-
-            // Update main voting chart
-            const chartData = {
-                labels: topCandidates.map(c => c.name),
-                datasets: [{
-                    label: 'Votes',
-                    data: topCandidates.map(c => c.votes),
-=======
-            // Update main voting chart
-            const chartData = {
-                labels: candidateData.map(c => c.name),
-                datasets: [{
-                    label: 'Votes',
-                    data: candidateData.map(c => c.votes),
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                    backgroundColor: chartManager.colorSchemes.avalanche,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            
-            chartManager.updateChart('votesPerCandidateChart', chartData);
-            
-            // Update percentage chart
-            const percentageData = {
-<<<<<<< HEAD
-                labels: topCandidates.map(c => c.name),
-                datasets: [{
-                    data: topCandidates.map(c => c.percentage),
-=======
-                labels: candidateData.map(c => c.name),
-                datasets: [{
-                    data: candidateData.map(c => c.percentage),
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                    backgroundColor: chartManager.colorSchemes.avalanche,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            
-            chartManager.updateChart('votePercentageShareChart', percentageData);
-        }
-        
-        updateVoteCharts(voteData) {
-            // Convert vote data object to arrays
-            const candidates = Object.keys(voteData);
-            const votes = Object.values(voteData);
-            const totalVotes = votes.reduce((sum, v) => sum + v, 0);
-            
-            const chartData = {
-                labels: candidates.map(id => `Candidate ${id}`),
-                datasets: [{
-                    label: 'Votes',
-                    data: votes,
-                    backgroundColor: chartManager.colorSchemes.avalanche,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            
-            chartManager.updateChart('votesPerCandidateChart', chartData);
-            
-            // Update percentage chart
-            const percentages = votes.map(v => totalVotes > 0 ? (v / totalVotes) * 100 : 0);
-            const percentageData = {
-                labels: candidates.map(id => `Candidate ${id}`),
-                datasets: [{
-                    data: percentages,
-                    backgroundColor: chartManager.colorSchemes.avalanche,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            
-            chartManager.updateChart('votePercentageShareChart', percentageData);
-        }
-        
-        updatePredictionText(predictions) {
-            const predictionContainer = document.getElementById('livePredicton');
-            if (predictionContainer && predictions.length > 0) {
-                const topPrediction = predictions[0];
-                const candidateName = topPrediction.name || 'the leading candidate';
-                const probability = (topPrediction.probability || 0).toFixed(1);
-
-                predictionContainer.innerHTML = `
-                    <div class="prediction-item">
-                        <span class="prediction-text">
-                            <i class="fas fa-chart-line me-2 text-avalanche-cyan"></i>
-                            AI predicts <strong>${candidateName}</strong> has a <strong>${probability}%</strong> chance of winning.
-                        </span>
-                        <div class="prediction-graph">
-                            <canvas id="predictionChart" width="200" height="60"></canvas>
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <h5 class="chart-title">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                Vote Percentage Share
+                            </h5>
+                            <div class="chart-container">
+                                <canvas id="constituencyVotePercentageShareChart"></canvas>
+                            </div>
                         </div>
                     </div>
-                `;
-            }
-        }
-        
-        addTransactionToFeed(transactionEvent) {
-            const feedContainer = document.getElementById('transactionFeed');
-            if (!feedContainer) return;
+                </div>
+                <div class="mt-4 narrative-section" id="candidate-narrative-constituency">
+                    <!-- Candidate narrative insights will be injected here -->
+                </div>
 
-            if (transactionEvent.transaction) {
-                const tx = transactionEvent.transaction;
+                <h3 class="section-title-dynamic mt-4">Demographic Analytics</h3>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <h5 class="chart-title">
+                                <i class="fas fa-birthday-cake me-2"></i>
+                                Age Distribution
+                            </h5>
+                            <div class="chart-container">
+                                <canvas id="constituencyAgeGroupDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <h5 class="chart-title">
+                                <i class="fas fa-venus-mars me-2"></i>
+                                Gender Trends
+                            </h5>
+                            <div class="chart-container">
+                                <canvas id="constituencyGenderTrendsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 narrative-section" id="demographic-narrative-constituency">
+                    <!-- Demographic narrative insights will be injected here -->
+                </div>
 
-                const existingTx = feedContainer.querySelector(`[data-tx-hash="${tx.tx_hash}"]`);
-                if (existingTx) {
-                    return; 
+                <h3 class="section-title-dynamic mt-4">Historical Vote Trend</h3>
+                <div class="chart-card">
+                    <div class="chart-container">
+                        <canvas id="constituencyHistoricalChart"></canvas>
+                    </div>
+                </div>
+
+                <button class="btn btn-avalanche mt-4" id="backToOverviewBtn">Back to Overview</button>
+            `;
+            
+            contentDisplay.innerHTML = analysisHtml;
+
+            // Render Candidate Charts
+            setTimeout(() => {
+                if (data.chart_data && data.chart_data.candidate_votes && data.chart_data.candidate_votes.labels.length > 0) {
+                    const rawCandidates = data.chart_data.candidate_votes.labels.map((label, index) => ({
+                        name: label,
+                        votes: data.chart_data.candidate_votes.votes[index],
+                        percentage: data.chart_data.candidate_votes.percentages[index]
+                    }));
+
+                    // Sort by votes and take top 5
+                    const sortedCandidates = rawCandidates.sort((a, b) => b.votes - a.votes).slice(0, 5);
+
+                    // Pad with empty data if less than 5 candidates
+                    const paddedLabels = sortedCandidates.map(c => c.name);
+                    const paddedVotes = sortedCandidates.map(c => c.votes);
+                    const paddedPercentages = sortedCandidates.map(c => c.percentage);
+
+                    while (paddedLabels.length < 5) {
+                        paddedLabels.push(`Candidate ${paddedLabels.length + 1}`);
+                        paddedVotes.push(0);
+                        paddedPercentages.push(0);
+                    }
+
+                    const votesCanvas = document.getElementById('constituencyVotesPerCandidateChart');
+                    if (votesCanvas) {
+                        votesCanvas.style.width = '100%';
+                        votesCanvas.style.height = '350px'; // Set a default height
+                        this.chartMgr.createChart('constituencyVotesPerCandidateChart', 'bar', {
+                            labels: paddedLabels,
+                            datasets: [{
+                                label: 'Votes',
+                                data: paddedVotes,
+                                backgroundColor: this.chartMgr.colors.avalanche
+                            }]
+                        });
+                    }
+
+                    const percentageCanvas = document.getElementById('constituencyVotePercentageShareChart');
+                    if (percentageCanvas) {
+                        percentageCanvas.style.width = '100%';
+                        percentageCanvas.style.height = '350px'; // Set a default height
+                        this.chartMgr.createChart('constituencyVotePercentageShareChart', 'doughnut', {
+                            labels: paddedLabels,
+                            datasets: [{
+                                data: paddedPercentages,
+                                backgroundColor: this.chartMgr.colors.avalanche
+                            }]
+                        });
+                    }
+                } else {
+                    const candidateNarrativeEl = document.getElementById('candidate-narrative-constituency');
+                    if (candidateNarrativeEl) {
+                        candidateNarrativeEl.innerHTML = '<p class="text-center text-muted mt-3">No votes recorded yet for this constituency.</p>';
+                    }
+                }
+            }, 500); // Increased delay to allow DOM to render
+
+            // Render Demographic and Historical Charts
+            setTimeout(() => {
+                console.log('Demographic charts rendering. Gender distribution data:', data.chart_data?.gender_distribution); // Added log
+                if (data.chart_data && data.chart_data.age_distribution && data.chart_data.age_distribution.labels.length > 0) {
+                    const ageCanvas = document.getElementById('constituencyAgeGroupDistributionChart');
+                    if (ageCanvas) {
+                        ageCanvas.style.width = '100%';
+                        ageCanvas.style.height = '350px'; // Set a default height
+                        this.chartMgr.createChart('constituencyAgeGroupDistributionChart', 'bar', {
+                            labels: data.chart_data.age_distribution.labels,
+                            datasets: [{
+                                label: 'Votes',
+                                data: data.chart_data.age_distribution.counts,
+                                backgroundColor: this.chartMgr.colors.rainbow
+                            }]
+                        });
+                    }
                 }
 
+                if (data.chart_data && data.chart_data.gender_distribution && data.chart_data.gender_distribution.labels.length > 0) {
+                    console.log('Attempting to create constituencyGenderTrendsChart with data:', data.chart_data.gender_distribution);
+                    const genderCanvas = document.getElementById('constituencyGenderTrendsChart');
+                    if (genderCanvas) {
+                        console.log('constituencyGenderTrendsChart canvas element found.');
+                        genderCanvas.style.width = '100%';
+                        genderCanvas.style.height = '350px'; // Set a default height
+                        this.chartMgr.createChart('constituencyGenderTrendsChart', 'pie', {
+                            labels: data.chart_data.gender_distribution.labels,
+                            datasets: [{
+                                data: data.chart_data.gender_distribution.counts,
+                                backgroundColor: ['#2D74DA', '#E84142', '#00D4AA']
+                            }]
+                        });
+                        console.log('constituencyGenderTrendsChart created.');
+                    } else {
+                        console.warn('constituencyGenderTrendsChart canvas element NOT found.');
+                    }
+                } else {
+                    console.warn('No gender_distribution data available or invalid for constituencyGenderTrendsChart.', data.chart_data?.gender_distribution);
+                    const demographicNarrativeEl = document.getElementById('demographic-narrative-constituency');
+                    if (demographicNarrativeEl) {
+                        demographicNarrativeEl.innerHTML = '<p class="text-center text-muted mt-3">No demographic data available for this constituency.</p>';
+                    }
+                }
+
+                if (data.historical_data && data.historical_data.labels.length > 0) {
+                    const historicalCanvas = document.getElementById('constituencyHistoricalChart');
+                    if (historicalCanvas) {
+                        this.chartMgr.createChart('constituencyHistoricalChart', 'bar', {
+                            labels: data.historical_data.labels,
+                            datasets: [{
+                                label: 'Total Votes',
+                                data: data.historical_data.data,
+                                backgroundColor: this.chartMgr.colors.gradient
+                            }]
+                        });
+                    }
+                }
+            }, 500); // Increased delay to allow DOM to render
+
+            // Populate Narrative Insights
+            const candidateNarrativeEl = document.getElementById('candidate-narrative-constituency');
+            const demographicNarrativeEl = document.getElementById('demographic-narrative-constituency');
+            const constituencySummaryTextEl = document.getElementById('constituency-summary-text');
+
+            if (constituencySummaryTextEl && data.narrative_insights && data.narrative_insights.length > 4) {
+                constituencySummaryTextEl.innerHTML = `
+                    <p class="lead mb-2 hover-glow-blue">${data.narrative_insights[1]}</p>
+                    <p class="lead mb-2 hover-glow-blue">${data.narrative_insights[2]}</p>
+                    <p class="text-muted hover-glow-green">${data.narrative_insights[3]}</p>
+                    <p class="text-muted hover-glow-green">${data.narrative_insights[4]}</p>
+                `;
+            }
+
+            if (candidateNarrativeEl && data.narrative_insights && data.narrative_insights.length > 1) {
+                candidateNarrativeEl.innerHTML = ``;
+            }
+
+            if (demographicNarrativeEl && data.narrative_insights && data.narrative_insights.length > 5) {
+                demographicNarrativeEl.innerHTML = data.narrative_insights.slice(5).map(insight => `<p>${insight}</p>`).join('');
+            }
+
+
+            // Show the constituency header
+            const constituencyHeader = document.getElementById('constituency-header');
+            const constituencyHeaderName = document.getElementById('constituency-header-name');
+            const backToOverallBtn = document.getElementById('back-to-overall');
+
+            if (constituencyHeader && constituencyHeaderName) {
+                constituencyHeader.classList.remove('d-none');
+                constituencyHeaderName.textContent = `Analysis for: ${name}`;
+                if (backToOverallBtn) {
+                    backToOverallBtn.onclick = () => this.showOverallDashboard();
+                }
+            }
+
+            constituencySection.classList.remove('d-none');
+            constituencySection.offsetHeight; // Force reflow
+            constituencySection.scrollIntoView({ behavior: 'smooth' });
+
+            // The backToOverviewBtn event listener is now handled above within the constituencyHeader check.
+            // document.getElementById('backToOverviewBtn').addEventListener('click', () => {
+            //     this.showOverallDashboard();
+            // });
+        }
+        handle3DVisualizationUpdate(data) {
+            console.log('handle3DVisualizationUpdate called with data:', data);
+            const container = document.getElementById('threejs-container');
+            if (!container || !window.THREE) return;
+
+            if (!this.threeJs.scene) {
+                this.threeJs.scene = new THREE.Scene();
+                this.threeJs.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+                this.threeJs.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.threeJs.renderer.setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(this.threeJs.renderer.domElement);
+
+                const textureLoader = new THREE.TextureLoader();
+                const earthTexture = textureLoader.load('https://threejs.org/examples/textures/land_ocean_ice_cloud_2048.jpg');
+
+                const globeGeometry = new THREE.SphereGeometry(100, 64, 64);
+                const globeMaterial = new THREE.MeshPhongMaterial({
+                    map: earthTexture, // Apply earth texture
+                    transparent: true,
+                    opacity: 0.9,
+                    shininess: 10
+                });
+                this.threeJs.globe = new THREE.Mesh(globeGeometry, globeMaterial);
+                this.threeJs.scene.add(this.threeJs.globe);
+
+                // Add Stars
+                const starGeometry = new THREE.BufferGeometry();
+                const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1, sizeAttenuation: true });
+                const starVertices = [];
+                for (let i = 0; i < 10000; i++) { // 10,000 stars
+                    const x = (Math.random() - 0.5) * 2000;
+                    const y = (Math.random() - 0.5) * 2000;
+                    const z = (Math.random() - 0.5) * 2000;
+                    starVertices.push(x, y, z);
+                }
+                starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+                const stars = new THREE.Points(starGeometry, starMaterial);
+                this.threeJs.scene.add(stars);
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                this.threeJs.scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                directionalLight.position.set(5, 3, 5);
+                this.threeJs.scene.add(directionalLight);
+
+                this.threeJs.controls = new THREE.OrbitControls(this.threeJs.camera, this.threeJs.renderer.domElement);
+                this.threeJs.controls.enableDamping = true;
+                this.threeJs.controls.dampingFactor = 0.05;
+                this.threeJs.controls.screenSpacePanning = false;
+                this.threeJs.controls.minDistance = 120;
+                this.threeJs.controls.maxDistance = 300;
+
+                this.threeJs.camera.position.z = 200;
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    this.threeJs.controls.update();
+                    this.threeJs.renderer.render(this.threeJs.scene, this.threeJs.camera);
+                    if (this.threeJs.globe) {
+                        this.threeJs.globe.rotation.y += 0.0005;
+                    }
+                };
+                animate();
+
+                window.addEventListener('resize', () => {
+                    this.threeJs.camera.aspect = container.clientWidth / container.clientHeight;
+                    this.threeJs.camera.updateProjectionMatrix();
+                    this.threeJs.renderer.setSize(container.clientWidth, container.clientHeight);
+                });
+            }
+
+            if (data && data.constituencies) {
+                if (this.threeJs.markers) {
+                    this.threeJs.markers.forEach(marker => this.threeJs.scene.remove(marker));
+                }
+                this.threeJs.markers = [];
+
+                data.constituencies.forEach(c => {
+                    const lat = c.lat;
+                    const lon = c.lng;
+                    const radius = 100;
+                    const phi = (90 - lat) * (Math.PI / 180);
+                    const theta = (lon + 180) * (Math.PI / 180);
+
+                    const x = -(radius * Math.sin(phi) * Math.cos(theta));
+                    const y = radius * Math.cos(phi);
+                    const z = radius * Math.sin(phi) * Math.sin(theta);
+
+                    const markerGeometry = new THREE.SphereGeometry(3, 16, 16); // Slightly larger marker
+                    const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xE84142 });
+                    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                    marker.position.set(x, y, z);
+                    this.threeJs.scene.add(marker);
+                    this.threeJs.markers.push(marker);
+                });
+            }
+        }
+        handleError(error) {
+            console.error('App initialization failed:', error);
+            connectionManager.hideLoading();
+            this.showToastNotification(`Application Error: ${error.message}`, 'error');
+        }
+
+        handleNewTransaction(transactionData) {
+            console.log("New transaction received:", transactionData);
+            const feedContainer = document.getElementById('transactionFeed');
+            if (feedContainer && transactionData.transaction) {
+                const tx = transactionData.transaction;
                 const txElement = document.createElement('div');
                 txElement.className = 'transaction-item';
                 txElement.setAttribute('data-tx-hash', tx.tx_hash);
-                
                 txElement.innerHTML = `
                     <span class="tx-icon"><i class="fas fa-receipt"></i></span>
                     <span class="tx-hash">${tx.tx_hash.substring(0, 12)}...</span>
                     <span class="tx-details">Vote for Candidate ${tx.candidate_id}</span>
-                    <span class="tx-amount ms-auto">${(tx.gas_used / 1000000).toFixed(4)} AVAX</span>
-                `;
-                
+                    <span class="tx-amount ms-auto">${(tx.gas_used / 1000000).toFixed(4)} AVAX</span>`;
                 feedContainer.prepend(txElement);
-
                 while (feedContainer.children.length > 5) {
                     feedContainer.lastChild.remove();
                 }
             }
         }
-        
-        startPollingFallback() {
-            // Fallback polling when WebSocket fails
-            setInterval(async () => {
-                try {
-                    const [analytics, predictions, transactions] = await Promise.allSettled([
-                        this.apiService.getEnhancedAnalytics(),
-                        this.apiService.getLivePredictions(),
-                        this.apiService.getLiveTransactions()
-                    ]);
-                    
-                    if (analytics.status === 'fulfilled') {
-                        this.handleVotingUpdate({ 
-                            election_data: analytics.value.election_data,
-                            analytics: analytics.value.live_analytics,
-                            ai_insights: analytics.value.ai_insights
-                        });
-                    }
-                    
-                    if (predictions.status === 'fulfilled') {
-                        this.handlePredictionUpdate(predictions.value);
-                    }
-                    
-                    if (transactions.status === 'fulfilled') {
-                        this.handleBlockchainUpdate({ transactions: transactions.value.transactions });
-                    }
-                    
-                } catch (error) {
-                    console.error('Polling fallback error:', error);
-                }
-            }, 10000); // Poll every 10 seconds
-        }
-        
-        disconnect() {
-            if (this.socket) {
-                this.socket.disconnect();
-            }
-        }
-    }
-    
-    // ===============================================
-    // CONSTITUENCY SEARCH MANAGER
-    // ===============================================
-    
-    class SearchManager {
-<<<<<<< HEAD
-        constructor(apiService, chartManager, app) {
-            this.apiService = apiService;
-            this.chartManager = chartManager;
-            this.app = app;
-            this.constituencies = [];
-            this.topSuggestions = [];
-            this.searchInput = document.getElementById('constituencySearch');
-            this.searchResults = document.getElementById('searchResults');
-            this.searchButton = document.getElementById('searchButton');
-            this.highlightedIndex = -1;
-            this.initializeSearch();
-        }
 
-        setTopSuggestions(topLocations) {
-            if (topLocations) {
-                this.topSuggestions = Object.keys(topLocations).slice(0, 5);
-            }
-        }
-        
-        async initializeSearch() {
-            console.log("SearchManager: Initializing search...");
-            if (!this.searchInput || !this.searchResults || !this.searchButton) {
-                console.error("SearchManager: Search elements not found in the DOM.");
-=======
-        constructor(apiService, chartManager) {
-            this.apiService = apiService;
-            this.chartManager = chartManager;
-            this.constituencies = [];
-            this.searchInput = null;
-            this.searchResults = null;
-            this.initializeSearch();
-        }
-        
-        async initializeSearch() {
-            this.searchInput = document.getElementById('constituencySearch');
-            this.searchResults = document.getElementById('searchResults');
-            
-            if (!this.searchInput || !this.searchResults) {
-                console.error("Search elements not found in the DOM.");
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+        handlePredictionUpdate(data) {
+            console.log('App: handlePredictionUpdate called with data:', data);
+            if (!data || !data.predictions || data.predictions.length === 0) {
+                console.warn('handlePredictionUpdate: No valid prediction data received.', data);
                 return;
             }
 
-            this.setupSearchEventListeners();
-
-            try {
-                const response = await this.apiService.getConstituencies();
-<<<<<<< HEAD
-                console.log("SearchManager: Fetched constituencies response:", response);
-                if (response && Array.isArray(response.constituencies)) {
-                    this.constituencies = response.constituencies;
-                    console.log("SearchManager: Constituencies loaded:", this.constituencies);
-                } else {
-                    throw new Error("Invalid data format for constituencies.");
-                }
-            } catch (error) {
-                console.error('SearchManager: Failed to load constituencies:', error);
-                this.constituencies = [];
-                this.showError("Could not load constituency data.");
-=======
-                
-                // Flexible data handling for constituencies
-                if (response && Array.isArray(response.constituencies)) {
-                    // Handles { success: true, constituencies: [...] }
-                    this.constituencies = response.constituencies;
-                } else if (Array.isArray(response)) {
-                    // Handles a direct array response [...]
-                    this.constituencies = response;
-                } else {
-                    throw new Error("Invalid or unexpected data format for constituencies.");
-                }
-
-            } catch (error) {
-                console.error('Failed to load constituencies:', error);
-                this.constituencies = [];
-                this.showError("Could not load constituency data. Search is disabled.");
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            }
-        }
-        
-        setupSearchEventListeners() {
-<<<<<<< HEAD
-=======
-            const searchInput = document.getElementById('constituencySearch');
-            const searchResults = document.getElementById('searchResults');
-            const searchButton = document.getElementById('searchButton');
-            
-            if (!searchInput || !searchResults || !searchButton) return;
-            
-            this.searchInput = searchInput;
-            this.searchResults = searchResults;
-            this.highlightedIndex = -1;
-            
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            let searchTimeout;
-            
-            this.searchInput.addEventListener('input', (e) => {
-                clearTimeout(searchTimeout);
-<<<<<<< HEAD
-                searchTimeout = setTimeout(() => this.performSearch(e.target.value), 300);
-            });
-
-            this.searchButton.addEventListener('click', () => this.handleSearchAction());
-
-            this.searchInput.addEventListener('keydown', (e) => {
-                const items = this.searchResults.querySelectorAll('.search-result-item');
-                
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (items.length > 0) {
-                        this.highlightedIndex = (this.highlightedIndex + 1) % items.length;
-                        this.updateHighlight(items);
-                    }
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    if (items.length > 0) {
-                        this.highlightedIndex = (this.highlightedIndex - 1 + items.length) % items.length;
-                        this.updateHighlight(items);
-                    }
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (this.highlightedIndex > -1 && items[this.highlightedIndex]) {
-                        const selectedConstituency = items[this.highlightedIndex].dataset.constituency;
-                        if (selectedConstituency) {
-                            this.selectConstituency(selectedConstituency);
-                        } else {
-                            this.handleSearchAction();
-                        }
-                    } else {
-                        this.handleSearchAction();
-=======
-                searchTimeout = setTimeout(() => {
-                    this.performSearch(e.target.value);
-                }, 300);
-            });
-
-            searchButton.addEventListener('click', () => {
-                const query = this.searchInput.value;
-                if (query) {
-                    // Find the best match and select it
-                    const bestMatch = this.constituencies.find(c => c.toLowerCase() === query.toLowerCase());
-                    if (bestMatch) {
-                        this.selectConstituency(bestMatch);
-                    } else {
-                        // If no exact match, take the first result from the filtered list
-                        const filtered = this.constituencies.filter(c => c.toLowerCase().includes(query.toLowerCase()));
-                        if (filtered.length > 0) {
-                            this.selectConstituency(filtered[0]);
-                        } else {
-                            this.showError("No matching constituency found.");
-                        }
-                    }
-                }
-            });
-
-            this.searchInput.addEventListener('keydown', (e) => {
-                const items = this.searchResults.querySelectorAll('.search-result-item');
-                if (items.length === 0) return;
-
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    this.highlightedIndex = (this.highlightedIndex + 1) % items.length;
-                    this.updateHighlight(items);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    this.highlightedIndex = (this.highlightedIndex - 1 + items.length) % items.length;
-                    this.updateHighlight(items);
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (this.highlightedIndex > -1) {
-                        const selectedItem = items[this.highlightedIndex];
-                        this.selectConstituency(selectedItem.dataset.constituency);
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                    }
-                } else if (e.key === 'Escape') {
-                    this.hideSearchResults();
-                }
-            });
-            
-            this.searchInput.addEventListener('focus', () => {
-<<<<<<< HEAD
-                if (this.searchInput.value === '') {
-                    this.displaySearchResults(this.topSuggestions, "Top Suggestions");
-                } else if (this.searchResults.children.length > 0) {
-=======
-                if (this.searchResults && this.searchResults.children.length > 0) {
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                    this.searchResults.style.display = 'block';
-                }
-            });
-            
-<<<<<<< HEAD
-            document.addEventListener('click', (e) => {
-                if (!this.searchInput.contains(e.target) && !this.searchResults.contains(e.target)) {
-                    this.hideSearchResults();
-                }
-            });
-        }
-
-        handleSearchAction() {
-            const query = this.searchInput.value.trim();
-            console.log("SearchManager: Handling search action for query:", query);
-            if (!query) return;
-
-            const exactMatch = this.constituencies.find(c => c.toLowerCase() === query.toLowerCase());
-            if (exactMatch) {
-                this.selectConstituency(exactMatch);
-                return;
+            const predictionTextEl = document.querySelector('.prediction-text');
+            if (predictionTextEl) {
+                predictionTextEl.textContent = `AI is predicting ${data.leading_candidate} will win with ${data.predictions[0].probability.toFixed(1)}% probability`;
             }
 
-            const partialMatches = this.constituencies.filter(c => c.toLowerCase().includes(query.toLowerCase()));
-            if (partialMatches.length > 0) {
-                this.selectConstituency(partialMatches[0]);
-            } else {
-                this.showError("No matching constituency found.");
-            }
-        }
-
-        updateHighlight(items) {
-            items.forEach((item, index) => {
-                item.classList.toggle('active', index === this.highlightedIndex);
-=======
-            this.searchInput.addEventListener('blur', () => {
-                setTimeout(() => {
-                    if (this.searchResults) {
-                        this.searchResults.style.display = 'none';
-                    }
-                }, 200);
-            });
-        }
-
-        updateHighlight(items) {
-            items.forEach((item, index) => {
-                if (index === this.highlightedIndex) {
-                    item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
-                }
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            });
-        }
-        
-        performSearch(query) {
-<<<<<<< HEAD
-            console.log("SearchManager: Performing search for query:", query);
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            if (!query || query.length < 2) {
-                this.hideSearchResults();
-                return;
+            const confidenceMeterEl = document.getElementById('confidenceMeter');
+            const confidenceTextEl = document.getElementById('confidenceText');
+            if (confidenceMeterEl && confidenceTextEl) {
+                confidenceMeterEl.style.width = `${data.confidence}%`;
+                confidenceTextEl.textContent = `${data.confidence}%`;
             }
 
-            if (this.constituencies.length === 0) {
-<<<<<<< HEAD
-                this.displaySearchResults([], "No data available");
-                return;
-            }
-
-            const filtered = this.constituencies.filter(c => c.toLowerCase().includes(query.toLowerCase()));
-            console.log("SearchManager: Filtered results:", filtered);
-            this.displaySearchResults(filtered.slice(0, 10), "Results");
-        }
-        
-        displaySearchResults(results, title) {
-            if (!this.searchResults) return;
-
-            let content = `<div class="search-result-title">${title}</div>`;
-            if (results.length === 0 && title !== "Top Suggestions") {
-                content += `<div class="search-result-item text-muted">No results found.</div>`;
-            } else {
-                content += results.map(result => `
-=======
-                this.displaySearchResults([]);
-                return;
-            }
-
-            const filtered = this.constituencies.filter(c => 
-                c.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            this.displaySearchResults(filtered.slice(0, 10));
-        }
-        
-        displaySearchResults(results) {
-            if (!this.searchResults) return;
-
-            if (results.length === 0) {
-                this.searchResults.innerHTML = `<div class="search-result-item text-muted">No results found.</div>`;
-            } else {
-                this.searchResults.innerHTML = results.map(result => `
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                    <div class="search-result-item" data-constituency="${result}">
-                        ${result}
-                    </div>
-                `).join('');
-<<<<<<< HEAD
-            }
-            
-            this.searchResults.innerHTML = content;
-            this.searchResults.querySelectorAll('.search-result-item[data-constituency]').forEach(item => {
-                item.addEventListener('mousedown', () => this.selectConstituency(item.dataset.constituency));
-            });
-            
-            this.searchResults.style.display = 'block';
-            this.highlightedIndex = -1;
-=======
-
-                this.searchResults.querySelectorAll('.search-result-item').forEach(item => {
-                    item.addEventListener('mousedown', (e) => {
-                        this.selectConstituency(e.target.dataset.constituency);
-                    });
+            // Update the prediction chart if it exists
+            if (this.chartMgr.charts['predictionChart']) {
+                const labels = data.predictions.map(p => p.name);
+                const probabilities = data.predictions.map(p => p.probability);
+                this.chartMgr.updateChart('predictionChart', {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Prediction Probability',
+                        data: probabilities,
+                        backgroundColor: this.chartMgr.colors.gradient,
+                        borderColor: this.chartMgr.colors.gradient.map(c => c.replace('80', '')),
+                        borderWidth: 1
+                    }]
                 });
             }
-            
-            this.searchResults.style.display = 'block';
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
         }
-        
-        hideSearchResults() {
-            if (this.searchResults) {
-                this.searchResults.style.display = 'none';
-<<<<<<< HEAD
-            }
-        }
-        
-        showError(message) {
-            this.displaySearchResults([], message);
-        }
-        
-        async selectConstituency(constituency) {
-            console.log("SearchManager: Selecting constituency:", constituency);
-            currentConstituency = constituency;
-            this.searchInput.value = constituency;
-            this.hideSearchResults();
-=======
-                this.searchResults.innerHTML = '';
-            }
-        }
-        
-        async selectConstituency(constituency) {
-            currentConstituency = constituency;
-            
-            if (this.searchInput) {
-                this.searchInput.value = constituency;
-            }
-            
-            this.hideSearchResults();
-            
-            // Load constituency analysis
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            await this.loadConstituencyAnalysis(constituency);
-        }
-        
-        async loadConstituencyAnalysis(constituency) {
-<<<<<<< HEAD
-            console.log("SearchManager: Loading analysis for constituency:", constituency);
-            try {
-                connectionManager.showLoading(`Loading analysis for ${constituency}...`);
-                const data = await this.apiService.getConstituencyAnalysis(constituency);
-                console.log("SearchManager: Fetched analysis data:", data);
-                
-                if (data.success) {
-                    this.app.updateDashboard(data.analysis, constituency);
-                } else {
-                    throw new Error(data.error || 'Failed to load constituency analysis');
-                }
-            } catch (error) {
-                console.error('SearchManager: Error loading constituency analysis:', error);
-                // You might want to show an error message to the user on the dashboard
-            } finally {
-                connectionManager.hideLoading();
-            }
-        }
-=======
-            try {
-                connectionManager.showLoading(`Loading analysis for ${constituency}...`);
-                
-                const analysis = await this.apiService.getConstituencyAnalysis(constituency);
-                
-                if (analysis.success) {
-                    this.displayConstituencyAnalysis(constituency, analysis);
-                } else {
-                    throw new Error(analysis.error || 'Failed to load constituency analysis');
-                }
-                
-                connectionManager.hideLoading();
-                
-            } catch (error) {
-                console.error('Error loading constituency analysis:', error);
-                connectionManager.hideLoading();
-                this.showError(`Failed to load analysis for ${constituency}: ${error.message}`);
-            }
-        }
-        
-        displayConstituencyAnalysis(constituency, analysis) {
-            const comprehensiveSection = document.getElementById('comprehensive-analysis');
-            const candidateSection = document.getElementById('candidate-results');
-            const demographicSection = document.getElementById('demographic-analytics');
-            const constituencySection = document.getElementById('constituency-analysis');
-            const contentDisplay = document.getElementById('constituency-analysis-content');
-            const nameDisplay = document.getElementById('constituency-name-display');
 
-            if (!comprehensiveSection || !candidateSection || !demographicSection || !constituencySection || !contentDisplay || !nameDisplay) {
-                console.error("One or more display sections are missing from the DOM.");
-                return;
+        showToastNotification(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                const newContainer = document.createElement('div');
+                newContainer.id = 'toast-container';
+                newContainer.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 1050;
+                `;
+                document.body.appendChild(newContainer);
+                toastContainer = newContainer;
             }
 
-            // Hide main dashboard sections
-            comprehensiveSection.style.display = 'none';
-            candidateSection.style.display = 'none';
-            demographicSection.style.display = 'none';
-
-            // Set the title
-            nameDisplay.textContent = constituency;
-
-            // Build the inner HTML for the analysis
-            const analysisHtml = `
-                <div class="row">
-                    <div class="col-lg-8">
-                        <div class="constituency-insights">
-                            <h5 class="text-avalanche-blue mb-3">AI Insights for ${constituency}</h5>
-                            ${analysis.insights.map(insight => `
-                                <div class="narrative-insight mb-3">
-                                    <h6 class="text-avalanche-blue">${insight.title}</h6>
-                                    <p>${insight.description}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="constituency-stats">
-                            <div class="stat-card glass-effect p-3 mb-3">
-                                <h5 class="text-avalanche-blue mb-3">Summary</h5>
-                                <div class="stat-item mb-2"><strong>Total Votes:</strong> ${analysis.summary.total_votes.toLocaleString()}</div>
-                                <div class="stat-item mb-2"><strong>Candidates:</strong> ${analysis.summary.total_candidates}</div>
-                                <div class="stat-item mb-2"><strong>Years Covered:</strong> ${analysis.summary.years_covered.join(', ')}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row mt-4">
-                    <div class="col-lg-6">
-                        <div class="chart-card">
-                            <h5 class="chart-title">Age Distribution</h5>
-                            <div class="chart-container" style="height: 300px;">
-                                <canvas id="constituencyAgeChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="chart-card">
-                            <h5 class="chart-title">Gender Distribution</h5>
-                            <div class="chart-container" style="height: 300px;">
-                                <canvas id="constituencyGenderChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn btn-avalanche mt-4" id="backToOverviewBtn">Back to Overview</button>
-            `;
-            
-            contentDisplay.innerHTML = analysisHtml;
-
-            // NOW create the charts, after the canvas elements are in the DOM
-            if (analysis.chart_data) {
-                const ageData = {
-                    labels: Object.keys(analysis.chart_data.age_distribution),
-                    datasets: [{ label: 'Votes', data: Object.values(analysis.chart_data.age_distribution).map(d => d.votes), backgroundColor: this.chartManager.colorSchemes.rainbow }]
-                };
-                this.chartManager.createChart('constituencyAgeChart', 'bar', ageData);
-
-                const genderData = {
-                    labels: Object.keys(analysis.chart_data.gender_distribution),
-                    datasets: [{ data: Object.values(analysis.chart_data.gender_distribution).map(d => d.votes), backgroundColor: ['#2D74DA', '#E84142', '#00D4AA'] }]
-                };
-                this.chartManager.createChart('constituencyGenderChart', 'pie', genderData);
-            }
-
-            // Show the constituency section
-            constituencySection.classList.remove('d-none');
-            constituencySection.scrollIntoView({ behavior: 'smooth' });
-
-            // Add event listener for the back button
-            document.getElementById('backToOverviewBtn').addEventListener('click', () => {
-                constituencySection.classList.add('d-none');
-                comprehensiveSection.style.display = 'block';
-                candidateSection.style.display = 'block';
-                demographicSection.style.display = 'block';
-            });
-        }
-        
-        showOverview() {
-            const comprehensiveSection = document.getElementById('comprehensive-analysis');
-            const constituencySection = document.getElementById('constituency-analysis');
-            
-            if (comprehensiveSection) {
-                comprehensiveSection.style.display = 'block';
-            }
-            
-            if (constituencySection) {
-                constituencySection.style.display = 'none';
-            }
-            
-            // Clear search input
-            if (this.searchInput) {
-                this.searchInput.value = '';
-            }
-            
-            currentConstituency = null;
-        }
-        
-        // populateConstituencyDropdown() function removed
-        
-        showError(message) {
-            const errorToast = document.createElement('div');
-            errorToast.className = 'toast-notification error';
-            errorToast.innerHTML = message;
-            errorToast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #E84142;
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            toast.innerHTML = message;
+            toast.style.cssText = `background: ${type === 'error' ? '#E84142' : type === 'success' ? '#00D4AA' : '#2D74DA'};
                 color: white;
                 padding: 15px 20px;
                 border-radius: 8px;
-                z-index: 9999;
+                margin-bottom: 10px;
                 max-width: 350px;
                 animation: slideInRight 0.3s ease-out;
             `;
-            
-            document.body.appendChild(errorToast);
-            
+            toastContainer.appendChild(toast);
             setTimeout(() => {
-                errorToast.remove();
+                toast.style.animation = 'slideOutRight 0.3s ease-in forwards';
+                toast.addEventListener('animationend', () => toast.remove());
             }, 5000);
         }
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-    }
-    
-    // ===============================================
-    // THEME MANAGEMENT
-    // ===============================================
-    
-    class ThemeManager {
-        constructor() {
-            this.currentTheme = localStorage.getItem('theme') || 'light';
-            this.init();
-        }
-        
-        init() {
-            this.applyTheme(this.currentTheme);
-            const themeToggle = document.getElementById('themeToggle');
-            if (themeToggle) {
-                themeToggle.addEventListener('click', () => {
-                    this.toggleTheme();
-                });
-            }
-        }
-        
-        toggleTheme() {
-            this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
-            this.applyTheme(this.currentTheme);
-            localStorage.setItem('theme', this.currentTheme);
-        }
-        
-        applyTheme(theme) {
-            const body = document.body;
-            const themeIcon = document.getElementById('themeIcon');
-            
-            if (theme === 'dark') {
-                body.classList.remove('theme-light');
-                body.classList.add('theme-dark');
-                body.setAttribute('data-theme', 'dark');
-                if (themeIcon) {
-                    themeIcon.className = 'fas fa-moon rotate-slow';
-                }
-            } else {
-                body.classList.remove('theme-dark');
-                body.classList.add('theme-light');
-                body.setAttribute('data-theme', 'light');
-                if (themeIcon) {
-                    themeIcon.className = 'fas fa-sun rotate-slow';
-                }
-            }
-            
-            // Re-render charts with new theme colors if they exist
-            if (window.chartManager && window.chartManager.charts) {
-                this.updateChartsForTheme();
-            }
-        }
-        
-        updateChartsForTheme() {
-            // Update chart colors based on theme
-            Object.keys(chartManager.charts).forEach(chartId => {
-                const chart = chartManager.charts[chartId];
-                if (chart) {
-                    // Update chart options for theme
-                    const isDark = this.currentTheme === 'dark';
-                    
-                    if (chart.options.scales) {
-                        const textColor = isDark ? '#ffffff' : '#2c3e50';
-                        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-                        
-                        if (chart.options.scales.y) {
-                            chart.options.scales.y.ticks.color = textColor;
-                            chart.options.scales.y.grid.color = gridColor;
-                        }
-                        if (chart.options.scales.x) {
-                            chart.options.scales.x.ticks.color = textColor;
-                            chart.options.scales.x.grid.color = gridColor;
-                        }
-                    }
-                    
-                    if (chart.options.plugins && chart.options.plugins.legend) {
-                        chart.options.plugins.legend.labels.color = isDark ? '#ffffff' : '#2c3e50';
-                    }
-                    
-                    chart.update();
-                }
-            });
-        }
-    }
-    
-    // ===============================================
-    // MAIN APPLICATION CLASS
-    // ===============================================
-    
-    class VotingAnalyticsApp {
-        constructor() {
-            this.apiService = new APIService();
-            this.chartManager = new ChartManager();
-            this.wsManager = new WebSocketManager(this.apiService, this.chartManager);
-<<<<<<< HEAD
-            this.searchManager = new SearchManager(this.apiService, this.chartManager, this);
-=======
-            this.searchManager = new SearchManager(this.apiService, this.chartManager);
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            this.themeManager = new ThemeManager();
-            this.initialDataLoaded = false;
-            this.loadingTimeout = null; // To manage the loading timeout
-            this.allCandidates = []; // Store all candidates
-<<<<<<< HEAD
-            this.candidateDisplayLimit = 5; // Number of candidates to show at once
-            this.currentCandidateIndex = 0; // Starting index for rotation
-            this.candidateRotationInterval = null; // To hold the interval ID
-=======
-            this.currentCandidateIndex = 0; // Current starting index for display
-            this.candidateDisplayLimit = 5; // Number of candidates to display at once
-            this.candidateRotationInterval = null; // To store the interval ID
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            
-            this.init();
-        }
-        
-        async init() {
-            console.log('Initializing Avalanche Voting Analytics...');
-            
-            // Set a timeout to prevent getting stuck on the loading screen
-            this.loadingTimeout = setTimeout(() => {
-                if (!this.initialDataLoaded) {
-                    console.error("Application timed out waiting for initial data.");
-                    this.handleInitializationError(new Error("Initial data load timed out."));
-                }
-            }, 15000); // 15-second timeout
 
-            try {
-                // Check backend health
-                await this.checkBackendHealth();
-                
-<<<<<<< HEAD
-                // Load historical data for the line chart
-                await this.loadHistoricalData();
-
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                // Connect to WebSocket
-                this.wsManager.connect();
-                
-                // Initialize 3D visualization if needed
-                this.init3DVisualization();
-                
-                console.log('Application initialized successfully, waiting for data...');
-                
-            } catch (error) {
-                console.error('Application initialization failed:', error);
-                this.handleInitializationError(error);
-                clearTimeout(this.loadingTimeout); // Clear timeout on error
-            }
-        }
-
-        handleInitialData(data) {
-            if (this.initialDataLoaded) return;
-            console.log("handleInitialData: Received initial data, processing now.");
-
-            // Clear the loading timeout since we received data
-            clearTimeout(this.loadingTimeout);
-
-<<<<<<< HEAD
-            this.updateDashboard(data.analytics, "Overall");
-
-            this.processAnalyticsData(data); // Pass the whole data object
-            if (data.analytics && data.analytics.ai_predictions) {
-                this.processPredictionsData(data.analytics.ai_predictions);
-            }
-            
-            if (data.analytics && data.analytics.demographics) {
-                this.searchManager.setTopSuggestions(data.analytics.demographics.locations.top_10_counts);
-=======
-            this.processAnalyticsData(data.election_data);
-            this.processPredictionsData(data.ai_predictions || {}); // Safely pass ai_predictions
-            
-            if (data.analytics && data.analytics.demographics) {
-                this.processDemographicsData(data.analytics.demographics);
-                this.createDemographicCharts(data.analytics.demographics);
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            } else {
-                console.warn("handleInitialData: 'demographics' data missing from analytics object.", data);
-            }
-            
-            if (data.election_data && data.election_data.candidates) {
-                this.allCandidates = data.election_data.candidates; // Store all candidates
-<<<<<<< HEAD
-=======
-                this.createEnhancedCharts(this.allCandidates.slice(0, this.candidateDisplayLimit)); // Display initial 5
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                this.startCandidateRotation();
-            } else {
-                console.error("handleInitialData: 'candidates' data missing from election_data object.", data);
-            }
-
-            this.setupEventListeners();
-            connectionManager.hideLoading();
-            this.initialDataLoaded = true;
-            console.log("handleInitialData: Processing complete, UI should be visible.");
-        }
-        
-        updateEnhancedCharts(candidateData) {
-            if (!candidateData || candidateData.length === 0) return;
-
-            const votesData = {
-                labels: candidateData.map(c => c.name),
-                datasets: [{
-                    label: 'Votes',
-                    data: candidateData.map(c => c.votes),
-                    backgroundColor: this.chartManager.colorSchemes.avalanche,
-                    borderColor: this.chartManager.colorSchemes.avalanche,
-                    borderWidth: 1,
-                    borderRadius: 5,
-                }]
-            };
-            this.adjustChartHeight('votesPerCandidateChart', votesData);
-            this.chartManager.updateChart('votesPerCandidateChart', votesData);
-
-            const percentageData = {
-                labels: candidateData.map(c => c.name),
-                datasets: [{
-                    data: candidateData.map(c => c.percentage),
-                    backgroundColor: this.chartManager.colorSchemes.avalanche,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            this.chartManager.updateChart('votePercentageShareChart', percentageData);
-        }
-
-        startCandidateRotation() {
-            if (this.candidateRotationInterval) {
-                clearInterval(this.candidateRotationInterval);
-            }
-            this.candidateRotationInterval = setInterval(() => {
-                if (this.allCandidates.length <= this.candidateDisplayLimit) {
-                    clearInterval(this.candidateRotationInterval);
-                    return;
-                }
-
-                this.currentCandidateIndex = (this.currentCandidateIndex + this.candidateDisplayLimit) % this.allCandidates.length;
-                
-                let candidatesToDisplay = this.allCandidates.slice(
-                    this.currentCandidateIndex,
-                    this.currentCandidateIndex + this.candidateDisplayLimit
-                );
-
-                if (candidatesToDisplay.length < this.candidateDisplayLimit) {
-                    const remaining = this.candidateDisplayLimit - candidatesToDisplay.length;
-                    candidatesToDisplay.push(...this.allCandidates.slice(0, remaining));
-                }
-                
-                this.updateEnhancedCharts(candidatesToDisplay);
-            }, 5000); // Rotate every 5 seconds
-        }
-        
-        async checkBackendHealth() {
-            try {
-                const health = await this.apiService.getHealthStatus();
-                console.log('Backend health check passed:', health.status);
-                return health;
-            } catch (error) {
-                console.warn('Backend health check failed, using fallback mode');
-                throw error;
-            }
-        }
-        
-        async loadInitialData() {
-            // This function is now deprecated, initial data is loaded via WebSocket
-        }
-        
-<<<<<<< HEAD
-        async loadHistoricalData() {
-            try {
-                const historicalData = await this.apiService.getHistoricalVotes();
-                if (historicalData.success) {
-                    this.createHistoricalChart(historicalData);
-                }
-            } catch (error) {
-                console.error("Failed to load historical data:", error);
-            }
-        }
-
-        createHistoricalChart(historicalData) {
-            const chartData = {
-                labels: historicalData.labels,
-                datasets: [{
-                    label: 'Total Votes',
-                    data: historicalData.data,
-                    backgroundColor: [
-                        'rgba(232, 65, 66, 0.7)',
-                        'rgba(45, 116, 218, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(232, 65, 66, 1)',
-                        'rgba(45, 116, 218, 1)'
-                    ],
-                    borderWidth: 1,
-                    borderRadius: 5
-                }]
-            };
-
-            this.chartManager.createChart('historicalVotesChart', 'bar', chartData, {
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            });
-        }
-
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-        processAnalyticsData(data) {
-            if (data.election_data) {
-                // Update vote counts
-                const totalVotes = data.election_data.current_turnout;
-                liveVoteCount = totalVotes;
-                
-                const totalVotesEl = document.getElementById('total-votes');
-                if (totalVotesEl) {
-                    totalVotesEl.textContent = totalVotes.toLocaleString();
-                }
-                
-                const liveCountEl = document.getElementById('liveVoteCount');
-                if (liveCountEl) {
-                    liveCountEl.textContent = totalVotes.toLocaleString();
-                }
-                
-                // Update turnout
-                const turnoutEl = document.getElementById('participationRate');
-                if (turnoutEl) {
-                    turnoutEl.textContent = `${data.election_data.turnout_percentage}%`;
-                }
-            }
-            
-<<<<<<< HEAD
-            if (data.analytics) {
-                // Update AI insights count
-                const insightsEl = document.getElementById('total-insights');
-                if (insightsEl && data.ai_insights) {
-                    insightsEl.textContent = data.ai_insights.length;
-                }
-                
-                // Update confidence
-                if (data.analytics.ai_predictions) {
-                    const confidenceEl = document.getElementById('avg-confidence');
-                    if (confidenceEl) {
-                        const confidence = Math.round(data.analytics.ai_predictions.confidence * 100);
-=======
-            if (data.live_analytics) {
-                // Update AI insights count
-                const insightsEl = document.getElementById('total-insights');
-                if (insightsEl && data.live_analytics.ai_insights) {
-                    insightsEl.textContent = data.live_analytics.ai_insights.length;
-                }
-                
-                // Update confidence
-                if (data.live_analytics.ai_predictions) {
-                    const confidenceEl = document.getElementById('avg-confidence');
-                    if (confidenceEl) {
-                        const confidence = Math.round(data.live_analytics.ai_predictions.confidence * 100);
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                        confidenceEl.textContent = `${confidence}%`;
-                    }
-                }
-                
-                // Update high priority count
-                const highPriorityEl = document.getElementById('high-importance');
-<<<<<<< HEAD
-                if (highPriorityEl && data.analytics.security_status) {
-                    highPriorityEl.textContent = data.analytics.security_status.anomalies_detected || '0';
-=======
-                if (highPriorityEl && data.live_analytics.security_status) {
-                    highPriorityEl.textContent = data.live_analytics.security_status.anomalies_detected || '0';
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                }
-            }
-            
-            if (data.ai_insights) {
-                this.updateDashboardSummary(data.ai_insights);
-            }
-        }
-        
-        processPredictionsData(data) {
-            if (!data || !data.confidence) {
-                console.warn("processPredictionsData: Missing or invalid confidence data.", data);
-                return;
-            }
-
-            predictionConfidence = data.confidence;
-            
-            const confidenceTextEl = document.getElementById('confidenceText');
-            const confidenceMeterEl = document.getElementById('confidenceMeter');
-            
-            if (confidenceTextEl) {
-                confidenceTextEl.textContent = `${Math.round(data.confidence)}%`;
-            }
-            
-            if (confidenceMeterEl) {
-                confidenceMeterEl.style.width = `${data.confidence}%`;
-            }
-            
-            if (data.predictions && data.predictions.length > 0) {
-                const prediction = data.predictions[0];
-                const predictionContainer = document.getElementById('livePredicton');
-                
-                if (predictionContainer) {
-                    predictionContainer.innerHTML = `
-                        <div class="prediction-item">
-                            <span class="prediction-text">AI predicts ${data.leading_candidate || 'a candidate'} will win with ${prediction.probability.toFixed(1)}% probability</span>
-                            <small class="text-muted d-block mt-1">Model confidence: ${Math.round(data.confidence)}%</small>
-                        </div>
-                    `;
-                }
-            } else {
-                console.warn("processPredictionsData: No predictions array or empty.", data);
-            }
-        }
-        
-        processDemographicsData(insights) {
-            // Update demographic narrative section
-            const demographicNarrative = document.getElementById('demographic-narrative');
-            if (demographicNarrative && insights && insights.length > 0) {
-                const narrativeHtml = insights.filter(insight => insight.type === 'demographic').slice(0, 3).map(insight => `
-                    <div class="narrative-insight fade-in-up">
-                        <h6><i class="fas fa-lightbulb me-2"></i>${insight.title}</h6>
-                        <p>${insight.description}</p>
-                        <div class="mt-2">
-                            <span class="badge bg-avalanche-blue">Confidence: ${Math.round(insight.confidence * 100)}%</span>
-                            <span class="badge bg-avalanche-orange ms-2">Priority: ${insight.importance}/10</span>
-                        </div>
-                    </div>
-                `).join('');
-                
-                demographicNarrative.innerHTML = narrativeHtml;
-            }
-        }
-        
-        updateDashboardSummary(insights) {
-            const summaryEl = document.getElementById('summary-text');
-            if (summaryEl && insights.length > 0) {
-                const summaryHtml = insights.slice(0, 3).map(insight => `
-                    <div class="narrative-insight mb-3">
-                        <h6 class="text-avalanche-blue"><i class="fas fa-lightbulb me-2"></i>${insight.title}</h6>
-<<<<<<< HEAD
-                        <p class="text-primary">${insight.description}</p>
-=======
-                        <p>${insight.description}</p>
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                        <div class="insight-meta mt-2">
-                            <span class="badge bg-avalanche-green">Confidence: ${Math.round(insight.confidence * 100)}%</span>
-                            <span class="badge bg-avalanche-orange ms-2">Priority: ${insight.importance}/10</span>
-                        </div>
-                    </div>
-                `).join('');
-                
-                summaryEl.innerHTML = summaryHtml;
-            }
-        }
-        
-        adjustChartHeight(canvasId, data) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas || !canvas.parentElement) return;
-
-            const container = canvas.parentElement;
-            const numBars = data.labels.length;
-            const barHeight = 40; // pixels per bar
-            const padding = 60; // for title, labels, etc.
-            const newHeight = (numBars * barHeight) + padding;
-            
-            container.style.height = `${Math.max(350, newHeight)}px`;
-        }
-
-<<<<<<< HEAD
-        updateDashboard(analysisData, constituencyName = "Overall") {
-            console.log(`Updating dashboard for: ${constituencyName}`);
-
-            const constituencyHeader = document.getElementById('constituency-header');
-            const constituencyHeaderName = document.getElementById('constituency-header-name');
-
-            if (constituencyName === "Overall") {
-                constituencyHeader.classList.add('d-none');
-            } else {
-                constituencyHeader.classList.remove('d-none');
-                constituencyHeaderName.textContent = `Showing Analytics for: ${constituencyName}`;
-            }
-
-            // --- SAFE DATA ACCESS (FIXED) ---
-            const analysis = analysisData || {};
-            const candidateResults = analysis.candidate_results || {};
-            // This is the key fix: check for both possible names for the demographic data
-            const demographics = analysis.demographic_analysis || analysis.demographics || {};
-            const summary = analysis.summary || {};
-            const keyInsights = summary.key_insights || ["No key insights available."];
-            const candidateVotes = candidateResults.candidate_votes || {};
-            const votePercentages = candidateResults.vote_percentage_share || {};
-            const ageCounts = (demographics.age_groups && demographics.age_groups.counts) ? demographics.age_groups.counts : {};
-            const genderCounts = (demographics.gender && demographics.gender.counts) ? demographics.gender.counts : {};
-            const locationCounts = (demographics.locations && demographics.locations.top_10_counts) ? demographics.locations.top_10_counts : {};
-
-            // Update titles and summary sections
-            const summaryEl = document.getElementById('summary-text');
-            if (summaryEl) {
-                summaryEl.innerHTML = `
-                    <div class="narrative-insight mb-3">
-                        <h6 class="text-avalanche-blue"><i class="fas fa-lightbulb me-2"></i>Key Insights for ${constituencyName}</h6>
-                        <p class="text-primary">${keyInsights.join('</p><p class="text-primary">')}</p>
-                    </div>
-                `;
-            }
-
-            // --- UPDATE CHARTS ---
-            this.createEnhancedCharts(candidateResults, constituencyName);
-            this.createDemographicCharts(demographics, constituencyName);
-            
-            console.log("Dashboard updated successfully.");
-        }
-
-        createEnhancedCharts(candidateData, constituencyName = "Overall") {
-            if (!candidateData) {
-                console.warn("createEnhancedCharts: No candidate data provided.");
-                return;
-            }
-
-            const candidateVotes = candidateData.candidate_votes || {};
-            const votePercentages = candidateData.vote_percentage_share || {};
-
-            const topCandidates = Object.keys(candidateVotes).map(key => ({ name: key, votes: candidateVotes[key] })).sort((a, b) => b.votes - a.votes).slice(0, 5);
-            
-            // Candidate votes chart (Horizontal Bar)
-            const votesData = {
-                labels: topCandidates.map(c => c.name),
-                datasets: [{
-                    label: 'Votes',
-                    data: topCandidates.map(c => c.votes),
-=======
-        createEnhancedCharts(candidateData) {
-            if (!candidateData || candidateData.length === 0) {
-                console.warn("createEnhancedCharts: No candidate data provided.");
-                return;
-            }
-            
-            // Candidate votes chart (Horizontal Bar)
-            const votesData = {
-                labels: candidateData.map(c => c.name),
-                datasets: [{
-                    label: 'Votes',
-                    data: candidateData.map(c => c.votes),
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                    backgroundColor: this.chartManager.colorSchemes.avalanche,
-                    borderColor: this.chartManager.colorSchemes.avalanche,
-                    borderWidth: 1,
-                    borderRadius: 5,
-                }]
-            };
-            
-            this.adjustChartHeight('votesPerCandidateChart', votesData);
-            this.chartManager.createChart('votesPerCandidateChart', 'bar', votesData, {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-<<<<<<< HEAD
-                        text: `Live Vote Count - ${constituencyName}`,
-=======
-                        text: 'Live Vote Count',
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                        font: { size: 16, weight: 'bold' }
-                    },
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { // The value axis (votes)
-                        beginAtZero: true,
-                        title: { 
-                            display: true, 
-                            text: 'Number of Votes' 
-                        }
-                    },
-                    x: { // The category axis (candidates)
-                        title: {
-                            display: true,
-                            text: 'Candidates'
-                        }
-                    }
-                }
-            });
-            
-            // Vote percentage chart
-            const percentageData = {
-<<<<<<< HEAD
-                labels: Object.keys(votePercentages),
-                datasets: [{
-                    data: Object.values(votePercentages),
-=======
-                labels: candidateData.map(c => c.name),
-                datasets: [{
-                    data: candidateData.map(c => c.percentage),
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                    backgroundColor: this.chartManager.colorSchemes.avalanche,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            
-            this.chartManager.createChart('votePercentageShareChart', 'doughnut', percentageData, {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-<<<<<<< HEAD
-                        text: `Vote Share % - ${constituencyName}`,
-=======
-                        text: 'Vote Share %',
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-                        font: { size: 16, weight: 'bold' }
-                    }
-                }
-            });
-        }
-        
-<<<<<<< HEAD
-        createDemographicCharts(demographics, constituencyName = "Overall") {
-            if (!demographics) {
-                console.error("createDemographicCharts: Missing demographic data.", demographics);
-                return;
-            }
-
-            const ageCounts = (demographics.age_groups && demographics.age_groups.counts) ? demographics.age_groups.counts : {};
-            const genderCounts = (demographics.gender && demographics.gender.counts) ? demographics.gender.counts : {};
-            const locationCounts = (demographics.locations && demographics.locations.top_10_counts) ? demographics.locations.top_10_counts : {};
-
-            // Age group distribution
-            const ageGroupData = {
-                labels: Object.keys(ageCounts),
-                datasets: [{
-                    label: 'Votes',
-                    data: Object.values(ageCounts),
-                    backgroundColor: this.chartManager.colorSchemes.avalanche,
-                }]
-            };
-=======
-        createDemographicCharts(demographics) {
-            console.log("createDemographicCharts: Received demographics data:", JSON.stringify(demographics, null, 2));
-            if (!demographics || !demographics.age_groups || !demographics.gender || !demographics.locations) {
-                console.error("createDemographicCharts: Missing essential demographic data.", demographics);
-                return;
-            }
-
-            // Age group distribution
-            const ageGroupData = {
-                labels: Object.keys(demographics.age_groups.counts),
-                datasets: [{
-                    label: 'Votes',
-                    data: Object.values(demographics.age_groups.counts),
-                    backgroundColor: this.chartManager.colorSchemes.rainbow,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            console.log("createDemographicCharts: Age Group Chart Data:", JSON.stringify(ageGroupData, null, 2));
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            
-            this.chartManager.createChart('ageGroupDistributionChart', 'bar', ageGroupData, {
-                plugins: {
-                    title: {
-                        display: true,
-<<<<<<< HEAD
-                        text: `Age Group Distribution - ${constituencyName}`
-                    },
-                    legend: { display: false }
-                }
-            });
-            
-            // Gender distribution
-            const genderData = {
-                labels: Object.keys(genderCounts),
-                datasets: [{
-                    data: Object.values(genderCounts),
-                    backgroundColor: ['#2D74DA', '#E84142', '#00D4AA'],
-                }]
-            };
-=======
-                        text: 'Age Group Distribution'
-                    }
-                }
-            });
-            console.log("createDemographicCharts: Age Group Chart created.", this.chartManager.charts['ageGroupDistributionChart']);
-            
-            // Gender distribution
-            const genderData = {
-                labels: Object.keys(demographics.gender.counts),
-                datasets: [{
-                    data: Object.values(demographics.gender.counts),
-                    backgroundColor: ['#2D74DA', '#E84142', '#00D4AA'],
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            console.log("createDemographicCharts: Gender Chart Data:", JSON.stringify(genderData, null, 2));
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            
-            this.chartManager.createChart('genderVotingTrendsChart', 'pie', genderData, {
-                plugins: {
-                    title: {
-                        display: true,
-<<<<<<< HEAD
-                        text: `Gender Distribution - ${constituencyName}`
-                    },
-                    datalabels: {
-                        display: false
-                    }
-                }
-            });
-            
-            // Location participation
-            const topLocations = Object.entries(locationCounts).sort(([,a],[,b]) => a-b);
-            const locationLabels = topLocations.map(([name]) => name);
-            const locationVotes = topLocations.map(([,votes]) => votes);
-
-            const locationData = {
-                labels: locationLabels,
-                datasets: [{
-                    label: 'Participation',
-                    data: locationVotes,
-                    backgroundColor: this.chartManager.colorSchemes.rainbow,
-                }]
-            };
-            
-            this.chartManager.createChart('locationParticipationChart', 'bar', locationData, {
-                indexAxis: 'y',
-                plugins: {
-                    title: {
-                        display: true,
-                        text: `Top Locations by Votes - ${constituencyName}`
-                    },
-                    legend: { display: false }
-                }
-            });
-
-            // Voter Turnout Hotspots (Heatmap-style Horizontal Bar Chart)
-            if (locationVotes.length > 0) {
-                const maxVotes = Math.max(...locationVotes);
-                const turnoutData = {
-                    labels: locationLabels,
-                    datasets: [{
-                        label: 'Total Votes',
-                        data: locationVotes,
-                        backgroundColor: locationVotes.map(votes => `hsla(0, 100%, 60%, ${0.2 + (votes / maxVotes) * 0.8})`), // Red intensity based on votes
-                        borderColor: 'hsla(0, 100%, 50%, 1)',
-                        borderWidth: 1
-                    }]
-                };
-
-                this.chartManager.createChart('turnoutHeatmapChart', 'bar', turnoutData, {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        title: {
-                            display: true,
-                            text: `Voter Turnout Hotspots - ${constituencyName}`
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            }
-=======
-                        text: 'Gender Distribution'
-                    }
-                }
-            });
-            console.log("createDemographicCharts: Gender Chart created.", this.chartManager.charts['genderVotingTrendsChart']);
-            
-            // Location participation
-            const locationData = {
-                labels: Object.keys(demographics.locations.top_10_counts),
-                datasets: [{
-                    label: 'Participation',
-                    data: Object.values(demographics.locations.top_10_counts),
-                    backgroundColor: this.chartManager.colorSchemes.gradient,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            };
-            console.log("createDemographicCharts: Location Chart Data:", JSON.stringify(locationData, null, 2));
-            
-            this.chartManager.createChart('locationParticipationChart', 'bar', locationData, {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Location-wise Participation'
-                    }
-                }
-            });
-            console.log("createDemographicCharts: Location Chart created.", this.chartManager.charts['locationParticipationChart']);
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-        }
-        
-        loadFallbackData() {
-            // This function is now deprecated
-        }
-        
-        setupEventListeners() {
-            // 3D visualization controls
-            const viewControls = {
-<<<<<<< HEAD
-                'viewGlobeBtn': 'globe',
-                'viewMapBtn': 'map',
-                'viewParticlesBtn': 'particles'
-=======
-                'viewGlobe': 'globe',
-                'viewMap': 'map',
-                'viewParticles': 'particles'
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-            };
-            
-            Object.entries(viewControls).forEach(([buttonId, viewType]) => {
-                const button = document.getElementById(buttonId);
-                if (button) {
-                    button.addEventListener('click', () => this.switch3DView(viewType));
-                }
-            });
-
-            // Stat card click events
-            document.querySelectorAll('.stat-card').forEach(card => {
-                card.addEventListener('click', (e) => {
-                    const statType = e.currentTarget.dataset.stat;
-                    this.handleStatCardClick(statType);
-                });
-            });
-
-<<<<<<< HEAD
-            // Section click-to-scroll events for the main dashboard
-            document.querySelectorAll('#main-dashboard-view section[id]').forEach(section => {
-                section.style.cursor = 'pointer';
-                section.addEventListener('click', (e) => {
-                    // Prevent scrolling when interacting with buttons or inputs inside the section
-                    if (e.target.closest('button, input, a, .form-control, .btn')) return;
-                    
-                    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                });
-            });
-
-            // Back to Overall button
-            document.getElementById('back-to-overall').addEventListener('click', () => {
-                this.apiService.getEnhancedAnalytics().then(data => {
-                    this.updateDashboard(data.live_analytics, "Overall");
-                });
-            });
-=======
-            // Cycle candidates button
-            const cycleButton = document.getElementById('cycleCandidates');
-            if (cycleButton) {
-                cycleButton.addEventListener('click', () => this.cycleCandidates());
-            }
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-        }
-
-        cycleCandidates() {
-            if (this.allCandidates.length <= this.candidateDisplayLimit) return;
-
-            this.currentCandidateIndex = (this.currentCandidateIndex + this.candidateDisplayLimit) % this.allCandidates.length;
-            
-            let candidatesToDisplay = this.allCandidates.slice(
-                this.currentCandidateIndex,
-                this.currentCandidateIndex + this.candidateDisplayLimit
-            );
-
-            if (candidatesToDisplay.length < this.candidateDisplayLimit) {
-                const remaining = this.candidateDisplayLimit - candidatesToDisplay.length;
-                candidatesToDisplay.push(...this.allCandidates.slice(0, remaining));
-            }
-            
-            this.updateEnhancedCharts(candidatesToDisplay);
-        }
-
-        handleStatCardClick(statType) {
+        showStatDetailModal(title, content) {
             const modalTitle = document.getElementById('statDetailModalLabel');
             const modalBody = document.getElementById('statDetailModalBody');
-            if (!modalTitle || !modalBody) return;
-
-            let title = '';
-            let bodyContent = '';
-
-            switch(statType) {
-                case 'total-votes':
-                    title = 'Total Votes Analysis';
-                    bodyContent = `
-                        <p>This card shows the total number of votes cast and recorded on the Avalanche blockchain.</p>
-                        <ul>
-                            <li><strong>Live Count:</strong> ${document.getElementById('total-votes').textContent}</li>
-                            <li><strong>Verification:</strong> Every vote is a transaction verified by the Avalanche network.</li>
-                        </ul>
-                    `;
-                    break;
-                case 'total-insights':
-                    title = 'AI Insights Overview';
-                    bodyContent = `
-                        <p>This card displays the total number of AI-generated insights from the election data.</p>
-                        <ul>
-                            <li><strong>Total Insights:</strong> ${document.getElementById('total-insights').textContent}</li>
-                            <li><strong>Analysis:</strong> Insights are generated by the Enhanced LLM Election Agent.</li>
-                        </ul>
-                    `;
-                    break;
-                case 'avg-confidence':
-                    title = 'Average Confidence Score';
-                    bodyContent = `
-                        <p>This shows the average confidence score of the AI's predictions and insights.</p>
-                        <ul>
-                            <li><strong>Average Confidence:</strong> ${document.getElementById('avg-confidence').textContent}</li>
-                        </ul>
-                    `;
-                    break;
-                case 'high-importance':
-                    title = 'High Priority Alerts';
-                    bodyContent = `
-                        <p>This card tracks the number of high-priority events, such as detected anomalies.</p>
-                        <ul>
-                            <li><strong>High Priority Events:</strong> ${document.getElementById('high-importance').textContent}</li>
-                        </ul>
-                    `;
-                    break;
-            }
-
-            modalTitle.textContent = title;
-            modalBody.innerHTML = bodyContent;
-
-            const modal = new bootstrap.Modal(document.getElementById('statDetailModal'));
-            modal.show();
-        }
-        
-        handleWalletConnection() {
-            const button = document.getElementById('connectWallet');
-            if (!button) return;
-            
-            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connecting...';
-            button.disabled = true;
-            
-            // Simulate wallet connection
-            setTimeout(() => {
-                button.innerHTML = '<i class="fas fa-check me-2"></i>Connected';
-                button.classList.remove('btn-avalanche');
-                button.classList.add('btn-success');
-                
-                this.showSuccessToast('Wallet connected successfully!');
-            }, 2000);
-        }
-        
-        switch3DView(viewType) {
-            console.log(`Switching 3D view to: ${viewType}`);
-            
-            // Update active button
-            document.querySelectorAll('.view-controls button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            const activeButton = document.getElementById(`view${viewType.charAt(0).toUpperCase() + viewType.slice(1)}`);
-            if (activeButton) {
-                activeButton.classList.add('active');
-            }
-            
-            // Update 3D visualization if implemented
-            if (window.votingVisualization) {
-                window.votingVisualization.switchView(viewType);
+            if (modalTitle && modalBody) {
+                modalTitle.textContent = title;
+                modalBody.innerHTML = content;
+                const statModal = new bootstrap.Modal(document.getElementById('statDetailModal'));
+                statModal.show();
             }
         }
-        
-        init3DVisualization() {
-            const container = document.getElementById('threejs-container');
-<<<<<<< HEAD
-            if (!container || !window.THREE) return;
 
-            // Scene setup
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.z = 2.5;
+        animateNumber(element, endValue, duration = 1000) {
+            if (!element) return;
+            const startValue = parseInt(element.textContent.replace(/,/g, '')) || 0;
+            if (startValue === endValue) return;
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            container.innerHTML = ''; // Clear placeholder
-            container.appendChild(renderer.domElement);
+            let startTime = null;
 
-            // Globe
-            const geometry = new THREE.SphereGeometry(1.5, 64, 64);
-            const textureLoader = new THREE.TextureLoader();
-            const texture = textureLoader.load('https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/earthmap1k.jpg');
-            const material = new THREE.MeshStandardMaterial({ map: texture, metalness: 0.3, roughness: 0.7 });
-            const globe = new THREE.Mesh(geometry, material);
-            scene.add(globe);
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambientLight);
-            const pointLight = new THREE.PointLight(0xffffff, 1);
-            pointLight.position.set(5, 5, 5);
-            scene.add(pointLight);
-
-            // Controls
-            const controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.minDistance = 2;
-            controls.maxDistance = 10;
-            controls.enablePan = false;
-            controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.5;
-
-            // Animation loop
-            const animate = () => {
-                requestAnimationFrame(animate);
-                controls.update(); // autoRotate needs this in the loop
-                renderer.render(scene, camera);
+            const step = (timestamp) => {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const currentValue = Math.floor(progress * (endValue - startValue) + startValue);
+                element.textContent = currentValue.toLocaleString();
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
             };
-            animate();
 
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
-            });
-
-            // Add vote hotspots
-            this.addVoteHotspots(scene, globe);
-
-            // Add live vote particles
-            const particlesMesh = this.addLiveVoteParticles(scene, globe);
-
-            // Enable clickable regions
-            this.enableClickableRegions(container, camera, scene);
-
-            // Make view controls work
-            this.setupViewControls(globe, particlesMesh, camera, controls);
-        }
-
-        addVoteHotspots(scene, globe) {
-            // Placeholder for vote hotspots
-            const hotspots = [
-                { lat: 28.6139, lon: 77.2090, city: 'New Delhi', votes: 1200 },
-                { lat: 19.0760, lon: 72.8777, city: 'Mumbai', votes: 1500 },
-                { lat: 12.9716, lon: 77.5946, city: 'Bangalore', votes: 1350 }
-            ];
-
-            hotspots.forEach(spot => {
-                const phi = (90 - spot.lat) * (Math.PI / 180);
-                const theta = (spot.lon + 180) * (Math.PI / 180);
-
-                const x = -(1.5 * Math.sin(phi) * Math.cos(theta));
-                const z = (1.5 * Math.sin(phi) * Math.sin(theta));
-                const y = (1.5 * Math.cos(phi));
-
-                const geometry = new THREE.SphereGeometry(0.02, 16, 16);
-                const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                const marker = new THREE.Mesh(geometry, material);
-                
-                marker.position.set(x, y, z);
-                marker.userData = { isVoteMarker: true, ...spot };
-                globe.add(marker);
-            });
-        }
-
-        addLiveVoteParticles(scene, globe) {
-            const particleCount = 1000;
-            const particles = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-
-            for (let i = 0; i < particleCount; i++) {
-                const phi = Math.acos(-1 + (2 * i) / particleCount);
-                const theta = Math.sqrt(particleCount * Math.PI) * phi;
-
-                const x = 1.6 * Math.cos(theta) * Math.sin(phi);
-                const y = 1.6 * Math.sin(theta) * Math.sin(phi);
-                const z = 1.6 * Math.cos(phi);
-                
-                positions[i * 3] = x;
-                positions[i * 3 + 1] = y;
-                positions[i * 3 + 2] = z;
-            }
-
-            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const particleMaterial = new THREE.PointsMaterial({
-                color: 0x00d4aa,
-                size: 0.015,
-                transparent: true,
-                opacity: 0.7
-            });
-            const particleSystem = new THREE.Points(particles, particleMaterial);
-            scene.add(particleSystem);
-            return particleSystem;
-        }
-
-        switchView(viewId) {
-            const mainDashboard = document.getElementById('main-dashboard-view');
-            const constituencySection = document.getElementById('constituency-analysis');
-            
-            // Hide all views first
-            mainDashboard.style.display = 'none';
-            constituencySection.style.display = 'none';
-            
-            // Show the requested view
-            const viewToShow = document.getElementById(viewId);
-            if (viewToShow) {
-                viewToShow.style.display = 'block';
-                viewToShow.classList.remove('d-none');
-                console.log(`Switched view to: ${viewId}`);
-            } else {
-                console.error(`View with ID '${viewId}' not found.`);
-            }
-        }
-
-        displayConstituencyAnalysis(constituency, data) {
-            console.log("Attempting to display analysis for:", constituency);
-            
-            const contentDisplay = document.getElementById('constituency-analysis-content');
-            const nameDisplay = document.getElementById('constituency-name-display');
-
-            if (!contentDisplay || !nameDisplay) {
-                console.error("DisplayConstituencyAnalysis: Critical content elements are missing.");
-                return;
-            }
-
-            // Ensure data is valid before proceeding
-            const analysis = data ? data.analysis : null;
-            if (!analysis) {
-                contentDisplay.innerHTML = `<div class="alert alert-danger">Could not load analysis. Invalid data received from server.</div>`;
-                this.switchView('constituency-analysis');
-                return;
-            }
-
-            nameDisplay.textContent = constituency;
-            
-            const candidateResults = analysis.candidate_results || {};
-            const demographics = analysis.demographic_analysis || {};
-            const summary = analysis.summary || {};
-            const keyInsights = summary.key_insights || ["No key insights available."];
-            const candidateVotes = candidateResults.candidate_votes || {};
-            const ageCounts = (demographics.age_groups && demographics.age_groups.counts) ? demographics.age_groups.counts : {};
-            const genderCounts = (demographics.gender && demographics.gender.counts) ? demographics.gender.counts : {};
-
-            const analysisHtml = `
-                <div class="card glass-effect mb-4">
-                    <div class="card-header avalanche-gradient text-white">
-                        <h4 class="mb-0">Summary for ${constituency}</h4>
-                    </div>
-                    <div class="card-body">
-                        <p class="lead text-primary">${keyInsights.join('</p><p class="lead text-primary">')}</p>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-lg-12 mb-4">
-                        <div class="card glass-effect h-100">
-                            <div class="card-header avalanche-gradient text-white">
-                                <h5 class="mb-0">Candidate Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container" style="height: 400px;">
-                                    <canvas id="constituencyCandidateChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card glass-effect mt-4">
-                    <div class="card-header avalanche-gradient text-white">
-                        <h4 class="mb-0">Demographic Visualizations</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="chart-card h-100">
-                                    <h5 class="chart-title">Age Distribution</h5>
-                                    <div class="chart-container">
-                                        <canvas id="constituencyAgeChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <div class="chart-card h-100">
-                                    <h5 class="chart-title">Gender Distribution</h5>
-                                    <div class="chart-container">
-                                        <canvas id="constituencyGenderChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn btn-avalanche mt-4" id="backToOverviewBtn">Back to Overview</button>
-            `;
-            
-            contentDisplay.innerHTML = analysisHtml;
-            console.log("Successfully injected new HTML for constituency analysis.");
-
-            // Create charts
-            this.chartManager.createChart('constituencyCandidateChart', 'bar', { labels: Object.keys(candidateVotes), datasets: [{ label: 'Votes', data: Object.values(candidateVotes), backgroundColor: this.chartManager.colorSchemes.rainbow }] });
-            this.chartManager.createChart('constituencyAgeChart', 'pie', { labels: Object.keys(ageCounts), datasets: [{ data: Object.values(ageCounts), backgroundColor: this.chartManager.colorSchemes.avalanche }] });
-            this.chartManager.createChart('constituencyGenderChart', 'doughnut', { labels: Object.keys(genderCounts), datasets: [{ data: Object.values(genderCounts), backgroundColor: ['#2D74DA', '#E84142', '#00D4AA'] }] });
-            console.log("All charts have been created.");
-
-            // Switch to the analysis view
-            this.switchView('constituency-analysis');
-            
-            const constituencySection = document.getElementById('constituency-analysis');
-            if(constituencySection) {
-                constituencySection.scrollIntoView({ behavior: 'smooth' });
-                console.log("Scrolled to constituency section.");
-            }
-
-            document.getElementById('backToOverviewBtn').addEventListener('click', () => {
-                this.switchView('main-dashboard-view');
-            });
-        }
-
-        setupViewControls(globe, particles, camera, controls) {
-            const globeBtn = document.getElementById('viewGlobeBtn');
-            const mapBtn = document.getElementById('viewMapBtn');
-            const particlesBtn = document.getElementById('viewParticlesBtn');
-
-            if (!globeBtn || !mapBtn || !particlesBtn) return;
-
-            globeBtn.addEventListener('click', () => {
-                globe.visible = true;
-                particles.visible = true;
-                controls.reset();
-                camera.position.set(0, 0, 2.5);
-                controls.update();
-            });
-
-            mapBtn.addEventListener('click', () => {
-                globe.visible = true;
-                particles.visible = false;
-                controls.reset();
-                camera.position.set(0, 2.5, 0); // Top-down view
-                camera.lookAt(0, 0, 0);
-                controls.update();
-            });
-
-            particlesBtn.addEventListener('click', () => {
-                globe.visible = false;
-                particles.visible = true;
-                controls.reset();
-                camera.position.set(0, 0, 2.5);
-                controls.update();
-            });
-        }
-
-        enableClickableRegions(container, camera, scene) {
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2();
-            const tooltip = document.getElementById('globe-tooltip');
-
-            container.addEventListener('mousemove', (event) => {
-                // Update mouse position
-                const rect = container.getBoundingClientRect();
-                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(scene.children, true);
-
-                let hoveredMarker = null;
-                for (let i = 0; i < intersects.length; i++) {
-                    if (intersects[i].object.userData.isVoteMarker) {
-                        hoveredMarker = intersects[i].object;
-                        break;
-                    }
-                }
-
-                if (hoveredMarker) {
-                    tooltip.style.display = 'block';
-                    tooltip.style.left = `${event.clientX + 15}px`;
-                    tooltip.style.top = `${event.clientY + 15}px`;
-                    
-                    const data = hoveredMarker.userData;
-                    tooltip.innerHTML = `
-                        <h6>${data.city}</h6>
-                        <ul>
-                            <li><strong>Votes:</strong> ${data.votes}</li>
-                            <li><strong>Intensity:</strong> ${data.intensity.toFixed(2)}</li>
-                        </ul>
-                    `;
-                } else {
-                    tooltip.style.display = 'none';
-                }
-            });
-        }
-
-        handleInitializationError(error) {
-            console.error("Failed to initialize the application:", error);
-            connectionManager.hideLoading();
-            
-            const mainContent = document.getElementById('main-dashboard-view');
-            if (mainContent) {
-                mainContent.innerHTML = `
-                    <div class="container text-center mt-5">
-                        <div class="alert alert-danger">
-                            <h4><i class="fas fa-exclamation-triangle me-2"></i>Connection Failed</h4>
-                            <p>Could not connect to the analytics server. Please ensure the server is running and try again.</p>
-                            <pre style="text-align: left; font-size: 12px;">${error.message}</pre>
-                        </div>
-                    </div>
-                `;
-            }
+            window.requestAnimationFrame(step);
         }
     }
 
-    // Initialize the application
-    const connectionManager = new ConnectionManager();
+    // Instantiate and start app
     const app = new VotingAnalyticsApp();
-    window.chartManager = app.chartManager; // Make it globally accessible for theme updates
-=======
-            if (!container) return;
-            
-            // Basic 3D scene setup (simplified)
-            try {
-                // This would contain the Three.js 3D visualization code
-                // For now, just add a placeholder
-                container.innerHTML = '<div class="text-center p-5"><h4 class="text-avalanche-blue">3D Visualization Loading...</h4><p class="text-muted">Interactive vote visualization will appear here</p></div>';
-                
-                // Load 3D data from backend
-                this.load3DData();
-            } catch (error) {
-                console.error('3D visualization initialization failed:', error);
-            }
-        }
-        
-        async load3DData() {
-            try {
-                const data = await this.apiService.get3DVisualizationData();
-                if (data.constituencies && data.particles) {
-                    console.log('3D visualization data loaded:', data.constituencies.length, 'constituencies');
-                    // Process 3D data here
-                }
-            } catch (error) {
-                console.error('Failed to load 3D visualization data:', error);
-            }
-        }
-        
-        showSuccessToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'toast-notification success';
-            toast.innerHTML = message;
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #00D4AA;
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                z-index: 9999;
-                animation: slideInRight 0.3s ease-out;
-            `;
-            
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
-        
-        handleInitializationError(error) {
-            console.error('Application failed to initialize:', error);
-            
-            connectionManager.updateConnectionStatus('disconnected');
-            connectionManager.hideLoading();
-            
-            // Show error message to user
-            const errorContainer = document.createElement('div');
-            errorContainer.className = 'alert alert-warning m-3';
-            errorContainer.innerHTML = `
-                <h6><i class="fas fa-exclamation-triangle me-2"></i>Connection Issue</h6>
-                <p>Unable to connect to the backend server. Running in demo mode with sample data.</p>
-                <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">Retry Connection</button>
-            `;
-            
-            const container = document.querySelector('.container-fluid');
-            if (container) {
-                container.insertBefore(errorContainer, container.firstChild);
-            }
-            
-            // Load fallback data
-            this.loadFallbackData();
-        }
-    }
-    
-    // ===============================================
-    // APPLICATION INITIALIZATION
-    // ===============================================
-    
-    // Initialize managers
-    const connectionManager = new ConnectionManager();
-    const chartManager = new ChartManager();
-    
-    // Make globally available
-    window.chartManager = chartManager;
+    window.chartManager = app.chartMgr;
     window.connectionManager = connectionManager;
-    
-    // Show initial loading
-    connectionManager.showLoading('Initializing Avalanche Analytics...');
-    
-    // Start the application
-    const app = new VotingAnalyticsApp();
-    
-    // Simulate connection process
-    setTimeout(() => {
-        connectionManager.updateConnectionStatus('connected');
-    }, 3000);
-    
-    console.log('Avalanche Voting Analytics - Enhanced System Ready!');
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
+    // Simulate initial ready status after 3 seconds (can be removed)
+    setTimeout(() => connectionManager.updateStatus('connected'), 3000);
 });

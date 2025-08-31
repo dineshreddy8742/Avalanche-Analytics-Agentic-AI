@@ -1,7 +1,7 @@
 {
   "election_analysis": {
     "metadata": {
-      "analysis_timestamp": "2025-08-31T00:33:54.053346",
+      "analysis_timestamp": "2025-08-31T10:19:27.352814",
       "total_votes": 30,
       "total_candidates": 15,
       "analyzer_version": "AI Blockchain Voting Analyzer v1.0"
@@ -97,17 +97,19 @@
       }
     },
     "narrative_insights": [
-      "\ud83c\udfc6 Dr.BODAGALA VENKATA RAJARAO is leading with 6.67% of total votes (2 votes).",
-      "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
-      "\ud83d\udc66 Most voters were in the 50+ age group (60.0%).",
-      "\u2696\ufe0f Gender distribution: 73.33% Male, 26.67% Female (gap: 46.7%).",
-      "\ud83c\udfd9\ufe0f Tirupati had the highest turnout with 30 votes (100.0%).",
-      "\ud83d\uddf3\ufe0f Election Overview: 30 total votes cast across 15 candidates.",
-      "\ud83d\udd25 This was a highly competitive election with a narrow victory margin.",
-      "\ud83d\udcca Age Analysis: 50+ voters drove the election outcome, representing 60.0% of the electorate.",
-      "\ud83d\udcc8 Male voters showed higher participation in this election.",
-      "\u23f0 Analysis completed on 2025-08-31 00:33:54",
-      "\u2705 All voting data has been verified and analyzed using AI-powered algorithms."
+      "Dr.BODAGALA VENKATA RAJARAO is leading with 6.67% of total votes (2 votes).",
+      "Margin of victory: 0 votes (0.0% of total votes).",
+      "Dr.BODAGALA VENKATA RAJARAO is leading with 6.67% of total votes (2 votes).",
+      "Margin of victory: 0 votes (0.0% of total votes).",
+      "Most voters were in the 50+ age group (60.0%).",
+      "Gender distribution: 73.33% Male, 26.67% Female (gap: 46.7%).",
+      "Tirupati had the highest turnout with 30 votes (100.0%).",
+      "Election Overview: 30 total votes cast across 15 candidates.",
+      "This was a highly competitive election with a narrow victory margin.",
+      "Age Analysis: 50+ voters drove the election outcome, representing 60.0% of the electorate.",
+      "Male voters showed higher participation in this election.",
+      "Analysis completed on 2025-08-31 10:19:27",
+      "All voting data has been verified and analyzed using AI-powered algorithms."
     ],
     "visualizations": {
       "charts_created": 5,
@@ -124,9 +126,9 @@
       "winning_percentage": 6.67,
       "margin_of_victory": 0.0,
       "key_insights": [
-        "\ud83c\udfc6 Dr.BODAGALA VENKATA RAJARAO is leading with 6.67% of total votes (2 votes).",
-        "\ud83d\udcc8 Margin of victory: 0 votes (0.0% of total votes).",
-        "\ud83d\udc66 Most voters were in the 50+ age group (60.0%)."
+        "Dr.BODAGALA VENKATA RAJARAO is leading with 6.67% of total votes (2 votes).",
+        "Margin of victory: 0 votes (0.0% of total votes).",
+        "Dr.BODAGALA VENKATA RAJARAO is leading with 6.67% of total votes (2 votes)."
       ]
     }
   }

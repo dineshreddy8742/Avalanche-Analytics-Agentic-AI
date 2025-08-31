@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Avalanche Voting Analytics - Easy Startup Script
-==============================================
+====
 Run this script to start the server with all features enabled.
 Perfect for VS Code development and hackathon demos.
 """
@@ -13,10 +13,10 @@ import os
 import sys
 import subprocess
 import time
-<<<<<<< HEAD
+
 import logging
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
+
 
 def check_dependencies():
     """Check if all required dependencies are installed."""
@@ -25,7 +25,7 @@ def check_dependencies():
         import pandas 
         import numpy
         import requests
-        print("✅ All dependencies are installed")
+        print("All dependencies are installed")
         return True
     except ImportError as e:
         print(f"❌ Missing dependency: {e}")
@@ -40,36 +40,39 @@ def check_dependencies():
 
 def start_server():
     """Start the Avalanche Voting Analytics server."""
-<<<<<<< HEAD
+
     # Suppress harmless connection reset errors
     log = logging.getLogger('eventlet.wsgi')
     log.setLevel(logging.ERROR)
 
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
+
     try:
         # Import and run the enhanced API
         from enhanced_ai_api import app, socketio, analytics, start_enhanced_simulation
         
-        print("🌐 Server starting on: http://localhost:8080")
+        print("Server starting on: http://localhost:8080")
         
         # Start the background threads
         start_enhanced_simulation()
 
         # Start the server
+        print("Registered routes:")
+        for rule in app.url_map.iter_rules():
+            print(f"  {rule.endpoint}: {rule.rule}")
         socketio.run(
             app,
             host='0.0.0.0',
             port=8080,
-            debug=False,
+                             debug=True,  # Set to True for debugging
             allow_unsafe_werkzeug=True
         )
         
     except KeyboardInterrupt:
-        print("\n🛑 Server stopped by user")
+        print("Server stopped by user")
     except Exception as e:
-        print(f"❌ Server error: {e}")
-        print("\n🔧 Troubleshooting:")
+        print(f"Server error: {e}")
+        print("Troubleshooting:")
         print("   1. Make sure port 8080 is available")
         print("   2. Check if all dependencies are installed")
         print("   3. Try running: python enhanced_ai_api.py")

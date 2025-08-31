@@ -1,16 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script type="text/javascript">
+  // This is a CodeSandbox injection script that's used to
+  // add navigation and inspector functionality to the preview
+  (function () {
+    // 1) Get the <script> tag that's currently running:
+    var me = document.currentScript;
+
+    // 2) Create the blocking‐style <script> to load:
+    var script = document.createElement("script");
+    script.src = "https://codesandbox.io/p/preview-protocol.js";
+
+    // By default a dynamically‐inserted <script> is async=true.
+    // Turn async off to make it behave like a normal blocking <script>:
+    script.async = false;
+    // (Do NOT set defer.)
+
+    // 3) Insert it immediately after the current <script>:
+    me.parentNode.insertBefore(script, me);
+  })();
+
+  const isIFramePreview = window.top !== window.self;
+
+  // Only run this script in editor context
+  if (isIFramePreview) {
+    // This script is used to enable Chrome DevTools functionality
+    (function () {
+      var script = document.createElement("script");
+      script.src =
+        "https://codesandbox.io/p/chrome-devtool/protocol/index.js";
+
+      script.onload = () => {
+        const devtoolProtocol = window.chobitsu;
+        if (devtoolProtocol) {
+          window.addEventListener("message", (event) => {
+            const { type, data } = event.data;
+
+            if (type === "FROM_DEVTOOL") {
+              devtoolProtocol.sendRawMessage(data);
+            }
+          });
+
+          devtoolProtocol.setOnMessage((data) => {
+            if (data.includes('"id":"tmp')) {
+              return;
+            }
+
+            window.parent.postMessage({ type: "TO_DEVTOOL", data }, "*");
+          });
+
+          devtoolProtocol.sendRawMessage(
+            `{"id":5,"method":"Runtime.enable","params":{}}`
+          );
+        }        
+      }
+
+      (document.head || document.documentElement).prepend(script);
+    })();
+  }
+
+  if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ === "undefined") {
+    let nextID = 0;
+    let hook = (__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
+      renderers: new Map(),
+      supportsFiber: true,
+      inject: (renderer) => {
+        const id = nextID++;
+        hook.renderers.set(id, renderer);
+        return id;
+      },
+      onScheduleFiberRoot() {},
+      onCommitFiberRoot() {},
+      onCommitFiberUnmount() {},
+    });
+  }
+
+  document.currentScript.remove();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' https://cdn.socket.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
-        style-src 'self' http://localhost:8080 https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline';
-        font-src 'self' http://localhost:8080 https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
-        img-src 'self' https://raw.githubusercontent.com https://threejs.org data:;
-        connect-src 'self' http://localhost:8080 *;">
-    <link rel="icon" href="data:,">
     <title>Avalanche Voting Analytics | Web3 Election Platform</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -18,41 +87,49 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Three.js for 3D Visualization -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <!-- Socket.IO for Real-time Updates -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.min.css">
     <!-- Google Fonts for Enhanced Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="theme-light">
     <header class="fixed-top">
-        <nav class="navbar-expand-lg avalanche-nav">
+        <!-- Main Navigation Bar -->
+        <nav class="navbar navbar-expand-lg avalanche-nav">
             <div class="container-fluid">
                 <a class="navbar-brand avalanche-brand" href="#">
-                    <i class="fas fa-chart-bar avalanche-icon"></i>
+                    <i class="fas fa-mountain avalanche-icon"></i>
                     <span class="brand-text">Avalanche</span>
                     <span class="brand-sub">Voting Analytics</span>
                 </a>
                 <div class="header-right-controls d-flex align-items-center">
+                    <!-- Constituency Search Bar -->
                     <div class="search-container me-3">
                         <div class="input-group">
-                            <input type="text" class="form-control search-input" placeholder="Search constituencies..." id="constituencySearch" autocomplete="off">
-                            <button class="btn btn-avalanche" type="button" id="searchButton" title="Search">
+                            <input type="text" 
+                                   class="form-control search-input" 
+                                   placeholder="Search constituencies..." 
+                                   id="constituencySearch"
+                                   autocomplete="off">
+                            <button class="btn btn-avalanche" type="button" id="searchButton">
                                 <i class="fas fa-search"></i>
                             </button>
                         </div>
                         <div class="search-results position-absolute w-100" id="searchResults"></div>
                     </div>
+                    <!-- Theme Toggle -->
                     <button class="btn btn-outline-light me-3 hover-glow-blue" id="themeToggle" title="Toggle Theme">
                         <i class="fas fa-sun rotate-slow" id="themeIcon"></i>
                     </button>
                 </div>
             </div>
         </nav>
+
+        <!-- Live Status & Blockchain Feed Bar -->
         <div class="blockchain-feed">
             <div class="container-fluid d-flex justify-content-between align-items-center h-100">
                 <div class="feed-status-left d-flex align-items-center">
@@ -75,16 +152,15 @@
             </div>
         </div>
     </header>
-    <main>
+
+    <main class="container-fluid">
+        <!-- Transaction Feed Content -->
         <div class="feed-content-wrapper">
             <div class="feed-content" id="transactionFeed">
                 <!-- Live transactions will appear here -->
             </div>
         </div>
-        <div id="constituency-header" class="d-none mb-4 text-center">
-            <h4 id="constituency-header-name" class="section-title-dynamic"></h4>
-            <button id="back-to-overall" class="btn btn-rainbow mt-2">Back to Overall Analytics</button>
-        </div>
+
         <!-- Hero Section with AI Predictions -->
         <section class="hero-section mb-5">
             <div class="row">
@@ -93,7 +169,7 @@
                         <div class="hero-header">
                             <h1 class="hero-title gradient-text-rainbow">
                                 <i class="fas fa-robot me-3 rotate-slow"></i>
-                                AI Agent-Powered Election Analytics
+                                AI-Powered Election Analytics
                             </h1>
                             <p class="hero-subtitle">Real-time blockchain voting analysis powered by Avalanche</p>
                         </div>
@@ -125,61 +201,61 @@
                         <div class="stat-card avalanche-red" data-stat="total-votes">
                             <div class="stat-icon">
                                 <i class="fas fa-vote-yea"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="total-votes" class="text-primary">Loading...</h3>
-                                <p class="text-secondary">Total Votes</p>
+                                <div class="stat-content">
+                                    <h3 id="total-votes">Loading...</h3>
+                                    <p>Total Votes</p>
+                                </div>
                             </div>
                         </div>
                         <div class="stat-card avalanche-blue" data-stat="total-insights">
                             <div class="stat-icon">
                                 <i class="fas fa-users"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="total-insights" class="text-primary">-</h3>
-                                <p class="text-secondary">AI Insights</p>
+                                <div class="stat-content">
+                                    <h3 id="total-insights">-</h3>
+                                    <p>AI Insights</p>
+                                </div>
                             </div>
                         </div>
                         <div class="stat-card avalanche-orange" data-stat="avg-confidence">
                             <div class="stat-icon">
                                 <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="avg-confidence" class="text-primary">-</h3>
-                                <p class="text-secondary">Avg Confidence</p>
+                                <div class="stat-content">
+                                    <h3 id="avg-confidence">-</h3>
+                                    <p>Avg Confidence</p>
+                                </div>
                             </div>
                         </div>
                         <div class="stat-card avalanche-green" data-stat="high-importance">
                             <div class="stat-icon">
                                 <i class="fas fa-shield-check"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="high-importance" class="text-primary">-</h3>
-                                <p class="text-secondary">High Priority</p>
+                                <div class="stat-content">
+                                    <h3 id="high-importance">-</h3>
+                                    <p>High Priority</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+
         <!-- 3D Visualization Section -->
-        <section class="visualization-section mb-5" id="visualization-section-id">
+        <section class="visualization-section mb-5">
             <div class="card glass-effect">
                 <div class="card-header avalanche-gradient">
                     <div class="d-flex align-items-center">
                         <i class="fas fa-globe me-3"></i>
-                        <h2 class="mb-0 section-title-dynamic">3D Interactive Vote Visualization</h2>
+                        <h2 class="mb-0">3D Interactive Vote Visualization</h2>
                         <div class="view-controls ms-auto">
-                            <button class="btn btn-sm btn-rainbow me-2 hover-glow-blue" id="viewGlobeBtn">Globe</button>
-                            <button class="btn btn-sm btn-avalanche me-2 hover-glow-green" id="viewMapBtn">Map</button>
-                            <button class="btn btn-sm btn-pulse hover-glow-red" id="viewParticlesBtn">Particles</button>
+                            <button class="btn btn-sm btn-rainbow me-2 hover-glow-blue" id="viewGlobe">Globe</button>
+                            <button class="btn btn-sm btn-avalanche me-2 hover-glow-green" id="viewMap">Map</button>
+                            <button class="btn btn-sm btn-pulse hover-glow-red" id="viewParticles">Particles</button>
                         </div>
                     </div>
                 </div>
                 <div class="card-body p-0">
                     <div class="visualization-container">
                         <div id="threejs-container"></div>
-                        <div id="globe-tooltip"></div>
                         <div class="visualization-overlay">
                             <div class="vote-counter">
                                 <div class="counter-item">
@@ -196,13 +272,14 @@
                 </div>
             </div>
         </section>
-        <!-- Candidate Results -->
+
+        <!-- Enhanced Candidate Results -->
         <section id="candidate-results" class="mb-5">
             <div class="card glass-effect">
                 <div class="card-header avalanche-gradient text-white bg-animated-rainbow">
                     <div class="d-flex align-items-center">
                         <i class="fas fa-trophy me-3 pulse-fast"></i>
-                        <h2 class="mb-0 section-title-dynamic">Candidate Results</h2>
+                        <h2 class="mb-0 gradient-text-rainbow">Candidate Results</h2>
                         <button class="btn btn-sm btn-light ms-auto" id="cycleCandidates">
                             <i class="fas fa-sync-alt me-1"></i>Cycle Candidates
                         </button>
@@ -214,28 +291,36 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-lg-6">
-                            <div class="chart-card">
-                                <h5 class="chart-title gradient-text-primary">
-                                    <i class="fas fa-chart-bar me-2 text-avalanche-cyan"></i>
-                                    Votes Per Candidate
-                                </h5>
-                                <div class="chart-container">
-                                    <canvas id="votesPerCandidateChart"></canvas>
-                                </div>
-                                <div class="chart-description">A real-time count of votes for each candidate.</div>
+                        <div class="col-lg-7">
+                            <h5 class="chart-title gradient-text-primary mb-3">
+                                <i class="fas fa-trophy me-2 text-avalanche-cyan"></i>
+                                Top 5 Candidates
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Candidate</th>
+                                            <th>Party</th>
+                                            <th>Votes</th>
+                                            <th>Vote Share</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="candidate-results-table">
+                                        <!-- Top 5 candidates will be populated here -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-5">
                             <div class="chart-card">
                                 <h5 class="chart-title">
                                     <i class="fas fa-chart-pie me-2"></i>
-                                    Vote Percentage Share
+                                    Vote Share
                                 </h5>
-                                <div class="chart-container">
+                                <div class="chart-container" style="height: 300px;">
                                     <canvas id="votePercentageShareChart"></canvas>
                                 </div>
-                                <div class="chart-description">The percentage of the total vote each candidate holds.</div>
                             </div>
                         </div>
                     </div>
@@ -245,13 +330,14 @@
                 </div>
             </div>
         </section>
-        <!-- Demographic Analytics -->
+
+        <!-- Enhanced Demographics Section -->
         <section id="demographic-analytics" class="mb-5">
             <div class="card glass-effect">
                 <div class="card-header avalanche-gradient text-white">
                     <div class="d-flex align-items-center">
                         <i class="fas fa-users me-3"></i>
-                        <h2 class="mb-0 section-title-dynamic">Demographic Analytics</h2>
+                        <h2 class="mb-0">Demographic Analytics</h2>
                         <div class="analytics-badge ms-auto">
                             <i class="fas fa-robot me-1"></i>
                             AI Powered
@@ -303,45 +389,48 @@
                 </div>
             </div>
         </section>
-        <!-- Historical Vote Trend Analysis -->
-        <section id="historical-analysis-section" class="mb-5">
+
+        <!-- Constituency Analysis -->
+        <section id="constituency-analysis" class="d-none">
             <div class="card glass-effect">
                 <div class="card-header avalanche-gradient text-white">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-chart-line me-3"></i>
-                        <h2 class="mb-0 section-title-dynamic">Historical Vote Trend</h2>
-                    </div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-map-pin me-2"></i>
+                        Analysis for <span id="constituency-name-display"></span>
+                    </h2>
                 </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 400px;">
-                        <canvas id="historicalVotesChart"></canvas>
-                    </div>
-                    <div class="chart-description text-center mt-3">This chart shows the total votes cast over different election years, indicating trends in voter participation.</div>
+                <div class="card-body" id="constituency-analysis-content">
+                    <!-- Enhanced constituency analysis -->
                 </div>
             </div>
         </section>
-        <!-- Heatmap -->
-        <section id="heatmap-section" class="mb-5">
-            <div class="card glass-effect">
-                <div class="card-header avalanche-gradient text-white">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-fire me-3"></i>
-                        <h2 class="mb-0 section-title-dynamic">Voter Turnout Hotspots</h2>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 450px;">
-                        <canvas id="turnoutHeatmapChart"></canvas>
-                    </div>
-                    <div class="chart-description text-center mt-3">This bubble chart highlights areas with high voter turnout. Larger bubbles indicate more votes, and color intensity shows turnout levels.</div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- AI Intelligence Hub -->
-        <section id="comprehensive-analysis" class="mb-5">
+
+        <!-- Analysis Dashboard & AI Hub -->
+        <section id="comprehensive-analysis">
             <div class="row">
-                <div class="col-lg-12">
+                <!-- Overview Dashboard -->
+                <div class="col-lg-6">
+                    <section id="analysis-summary" class="mb-5">
+                        <div class="card glass-effect h-100">
+                            <div class="card-header avalanche-gradient text-white">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-dashboard me-2 float"></i>
+                                    <h2 class="mb-0">Analysis Dashboard</h2>
+                                    <div class="analytics-badge ms-auto">
+                                        <span class="ai-pulse"></span>
+                                        <span>AI Insights</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body" id="summary-text">
+                                Loading comprehensive analysis...
+                            </div>
+                        </div>
+                    </section>
+                </div>
+      
+                <!-- AI Insights Hub -->
+                <div class="col-lg-6">
                     <section id="other-insights" class="mb-5">
                         <div class="card glass-effect h-100">
                             <div class="card-header avalanche-gradient text-white">
@@ -362,75 +451,9 @@
                 </div>
             </div>
         </section>
-        <!-- Constituency Analysis -->
-        <section id="constituency-analysis" class="d-none">
-            <div class="card glass-effect">
-                <div class="card-header avalanche-gradient text-white">
-                    <h2 class="mb-0">
-                        <i class="fas fa-map-pin me-2"></i>
-                        Analysis for <span id="constituency-name-display"></span>
-                    </h2>
-                    <button id="back-to-overall" class="btn btn-rainbow mt-2">Back to Overall Analytics</button>
-                </div>
-                <div id="constituency-analysis-summary" class="card-body narrative-section mt-3 mb-4">
-                    <h3 class="section-title-dynamic text-center mb-3 gradient-text-rainbow pulse-fast">
-                        <i class="fas fa-lightbulb me-2"></i>AI Analysis Summary
-                    </h3>
-                    <div id="constituency-summary-text" class="text-center">
-                        <!-- AI-powered summary will be injected here -->
-                    </div>
-                </div>
-                <div class="card-body" id="constituency-details-content">
-                    <!-- Candidate-wise Results -->
-                    <h3 class="section-title-dynamic mt-4">Candidate Results</h3>
-                    <div id="candidate-results-display" class="row">
-                        <!-- Candidate data will be injected here -->
-                    </div>
-                    <div class="mt-4 narrative-section" id="candidate-narrative-constituency">
-                        <!-- AI-powered narrative insights for candidates -->
-                    </div>
 
-                    <!-- Demographic Analytics -->
-                    <h3 class="section-title-dynamic mt-4">Demographic Analytics</h3>
-                    <div class="row">
-                        <div class="col-lg-4">
-                            <div class="chart-card">
-                                <h5 class="chart-title">Age Distribution</h5>
-                                <div class="chart-container">
-                                    <canvas id="constituencyAgeChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="chart-card">
-                                <h5 class="chart-title">Gender Trends</h5>
-                                <div class="chart-container">
-                                    <canvas id="constituencyGenderChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="chart-card">
-                                <h5 class="chart-title">Location Info</h5>
-                                <div class="chart-container">
-                                    <canvas id="constituencyLocationChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-4 narrative-section" id="demographic-narrative-constituency">
-                        <!-- AI-powered narrative insights for demographics -->
-                    </div>
-
-                    <!-- Visualizations (Charts generated by Python) -->
-                    <h3 class="section-title-dynamic mt-4">Visualizations</h3>
-                    <div id="constituency-charts-display" class="row">
-                        <!-- Charts will be injected here -->
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
+
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="avalanche-loader">
@@ -448,19 +471,24 @@
             </div>
         </div>
     </div>
+
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Enhanced JavaScript -->
-    <script src="script.js"></script>
+    <script src="script.min.js"></script>
+
+
     <!-- Connection Status Indicator -->
     <div class="connection-status connecting" id="connectionStatus">
         <span>CONNECTING...</span>
     </div>
+
     <footer class="footer">
         <div class="container-fluid">
             <p>&copy; 2025 Geeks Squad. All Rights Reserved.</p>
         </div>
     </footer>
+
     <!-- Stat Detail Modal -->
     <div class="modal fade" id="statDetailModal" tabindex="-1" aria-labelledby="statDetailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -475,6 +503,5 @@
             </div>
         </div>
     </div>
-    <div id="toast-container"></div>
 </body>
 </html>

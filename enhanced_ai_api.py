@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Enhanced AI Analytics API for Avalanche Blockchain Voting Platform
-=================================================================
+==
 
 Integrates advanced LLM capabilities with blockchain-ready features for
 the ultimate Web3 voting analytics experience.
@@ -18,6 +18,7 @@ Built for: T1 Hack25 Bengaluru Avalanche Hackathon
 """
 
 import json
+from flask_cors import cross_origin
 import os
 import sys
 import asyncio
@@ -30,24 +31,25 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Any
 import random
-<<<<<<< HEAD
+
 import uuid
 import logging
 
 # Import existing and enhanced agents
 from enhanced_llm_agent import EnhancedLLMElectionAgent, AIInsight, InsightType
 from blockchain_voting_analyzer import BlockchainVotingAnalyzer
-=======
+
 import threading
 import uuid
 
 # Import existing and enhanced agents
 from enhanced_llm_agent import EnhancedLLMElectionAgent, AIInsight, InsightType
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
 
 app = Flask(__name__)
+CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['SECRET_KEY'] = 'avalanche-voting-ai-hackathon-2024'
-CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # Global variable to store analytics instance for WebSocket access
@@ -155,10 +157,11 @@ class AvalancheVotingAnalytics:
         })
         
         # Update vote count
+        vote_amount = int(vote_record.get('total', 1)) # Get the 'total' votes from the record, default to 1
         if candidate_id in self.demo_election_data["votes"]:
-            self.demo_election_data["votes"][candidate_id] += 1
+            self.demo_election_data["votes"][candidate_id] += vote_amount
         else:
-            self.demo_election_data["votes"][candidate_id] = 1
+            self.demo_election_data["votes"][candidate_id] = vote_amount
             
         self.demo_election_data["current_turnout"] = sum(self.demo_election_data["votes"].values())
             
@@ -199,7 +202,7 @@ class AvalancheVotingAnalytics:
                 'election_data': self.format_demo_election(),
                 'blockchain_transactions': [transaction],
                 'ai_insights': fresh_insights,
-                'analytics': self.get_enhanced_live_analytics(),
+                'analytics': self.get_enhanced_live_analytics(), # Keep this for other analytics
                 'avalanche_stats': self.get_avalanche_network_stats(),
                 'timestamp': datetime.now().isoformat()
             })
@@ -275,10 +278,10 @@ class AvalancheVotingAnalytics:
         leader = candidates_full_list[0]
         runner_up = candidates_full_list[1] if len(candidates_full_list) > 1 else None
         
-        ai_insights = [f"🏆 {leader['name']} leads with {leader['votes']} votes ({leader['percentage']}%) - blockchain verified"]
+        ai_insights = [f"{leader['name']} leads with {leader['votes']} votes ({leader['percentage']}%) - blockchain verified"]
         if runner_up:
             margin = leader["votes"] - runner_up["votes"]
-            ai_insights.append(f"📊 Lead margin: {margin} votes over {runner_up['name']} - competitive race detected")
+            ai_insights.append(f"Lead margin: {margin} votes over {runner_up['name']} - competitive race detected")
         
         return {
             "candidates": candidates_display,
@@ -357,10 +360,11 @@ analytics = AvalancheVotingAnalytics()
 
 # Start demo election by default for hackathon demo
 analytics.demo_election_active = True
-print("🗳️ Demo election started automatically for hackathon demo")
+print("Demo election started automatically for hackathon demo")
 
 # Enhanced API Routes
 @app.route('/api/health')
+
 def health_check():
     """Enhanced health check with AI and blockchain status."""
     return jsonify({
@@ -470,6 +474,7 @@ def get_blockchain_transactions():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/analytics/enhanced')
+
 def get_enhanced_analytics():
     """Get comprehensive enhanced analytics."""
     try:
@@ -595,6 +600,7 @@ def get_demographic_analysis():
         }), 500
 
 @app.route('/api/constituencies', methods=['GET'])
+
 def get_constituencies():
     """Get list of all constituencies."""
     try:
@@ -620,166 +626,175 @@ def get_constituencies():
 
 @app.route('/api/analysis/constituency/<constituency_name>', methods=['GET'])
 def get_constituency_analysis(constituency_name):
-<<<<<<< HEAD
     """Generate a full, detailed analysis report for a specific constituency."""
     try:
         # Ensure the main demographic data is loaded
         main_df = analytics.llm_agent.demographic_df
         if main_df is None or main_df.empty:
+            app.logger.error("No demographic data available in LLM agent.")
             return jsonify({"success": False, "error": "No demographic data available"}), 404
 
         # Filter data for the specific constituency (case-insensitive)
         constituency_df = main_df[main_df['ac_name'].str.lower() == constituency_name.lower()]
         
         if constituency_df.empty:
+            app.logger.warning(f"No data found for constituency: {constituency_name}")
             return jsonify({"success": False, "error": f"No data found for constituency: {constituency_name}"}), 404
 
-        # Create a unique, safe directory name for the constituency's report
-        safe_constituency_name = "".join(c for c in constituency_name if c.isalnum() or c in (' ', '_')).rstrip()
-        output_dir = os.path.join('analysis_output', safe_constituency_name.replace(' ', '_'))
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Instantiate the analyzer with the specific output directory
-        analyzer = BlockchainVotingAnalyzer(output_dir=output_dir)
+        # Ensure 'total' and 'age' columns are numeric
+        constituency_df['total'] = pd.to_numeric(constituency_df['total'], errors='coerce').fillna(0)
+        constituency_df['age'] = pd.to_numeric(constituency_df['age'], errors='coerce')
         
-        # Run the complete analysis on the filtered data
-        analysis_results = analyzer.run_complete_analysis(data_frame=constituency_df)
+        # Drop rows where 'age' is NaN after coercion, as pd.cut cannot handle them
+        constituency_df.dropna(subset=['age'], inplace=True)
 
-        if "error" in analysis_results:
-            return jsonify({"success": False, "error": analysis_results["error"]}), 500
+        # --- Start of new analytics logic ---
 
-        # Create web-accessible URLs for the generated charts
-        chart_urls = [f"/{output_dir}/{os.path.basename(p)}".replace('\\', '/') for p in analyzer.charts_created]
+        # 1. Candidate-wise Results
+        candidate_votes = constituency_df.groupby('candidate_name')['total'].sum().reset_index()
+        total_constituency_votes = int(candidate_votes['total'].sum())
+        
+        candidate_results = []
+        winning_candidate = {"name": "", "votes": 0, "percentage": 0}
+        
+        if total_constituency_votes > 0: # Avoid division by zero if no votes
+            for _, row in candidate_votes.iterrows():
+                candidate_name = row['candidate_name']
+                votes = int(row['total'])
+                percentage = round((votes / total_constituency_votes) * 100, 2)
+                
+                candidate_results.append({
+                    "name": candidate_name,
+                    "votes": votes,
+                    "percentage": percentage
+                })
+                
+                if votes > winning_candidate["votes"]:
+                    winning_candidate["name"] = candidate_name
+                    winning_candidate["votes"] = votes
+                    winning_candidate["percentage"] = percentage
+            
+            candidate_results = sorted(candidate_results, key=lambda x: x['votes'], reverse=True)
+            
+            margin_of_victory = 0
+            if len(candidate_results) > 1:
+                margin_of_victory = winning_candidate["votes"] - candidate_results[1]["votes"]
+        else:
+            app.logger.warning(f"No total votes for constituency: {constituency_name}. Skipping candidate calculations.")
+
+        # 2. Demographic Analytics
+        # Age group analysis
+        age_bins = [0, 25, 35, 50, 150] # Assuming max age 150 for 50+
+        age_labels = ["18-25", "26-35", "36-50", "50+"]
+        
+        # Only apply pd.cut if there's data left after dropping NaNs
+        if not constituency_df.empty:
+            constituency_df['age_group'] = pd.cut(constituency_df['age'], bins=age_bins, labels=age_labels, right=True, include_lowest=True)
+            age_group_counts = constituency_df.groupby('age_group')['total'].sum().reindex(age_labels).fillna(0).to_dict()
+        else:
+            age_group_counts = {label: 0 for label in age_labels} # Initialize with zeros if no data
+        
+        # Gender analysis
+        gender_counts = constituency_df.groupby('sex')['total'].sum().to_dict()
+        
+        # Location (already filtered by constituency, so this is the specific constituency's data)
+        location_info = {
+            "state": constituency_df['state'].iloc[0] if not constituency_df.empty else "N/A",
+            "constituency": constituency_name,
+            "total_votes_in_constituency": total_constituency_votes
+        }
+
+        # 3. Narrative Analytics
+        narrative_insights = []
+        narrative_insights.append(f"Analysis for {constituency_name}:")
+        if winning_candidate["name"]:
+            narrative_insights.append(f"Candidate {winning_candidate['name']} is leading with {winning_candidate['votes']:,} votes, accounting for {winning_candidate['percentage']}% of the total votes.")
+            if margin_of_victory > 0:
+                narrative_insights.append(f"The margin of victory for {winning_candidate['name']} over the nearest competitor is {margin_of_victory:,} votes.")
+        else:
+            narrative_insights.append("No winning candidate identified yet or no votes recorded.")
+
+        if age_group_counts and any(age_group_counts.values()): # Check if there are actual counts
+            most_active_age_group = max(age_group_counts, key=age_group_counts.get)
+            narrative_insights.append(f"The most active age group in this constituency is {most_active_age_group}, contributing {age_group_counts[most_active_age_group]:,} votes.")
+        
+        if gender_counts and any(gender_counts.values()): # Check if there are actual counts
+            male_votes = gender_counts.get('MALE', 0)
+            female_votes = gender_counts.get('FEMALE', 0)
+            if male_votes > female_votes:
+                narrative_insights.append(f"Male voters show a higher turnout with {male_votes:,} votes compared to female voters with {female_votes:,} votes.")
+            elif female_votes > male_votes:
+                narrative_insights.append(f"Female voters show a higher turnout with {female_votes:,} votes compared to male voters with {male_votes:,} votes.")
+            else:
+                narrative_insights.append("Male and female voter turnout is relatively balanced.")
+
+        # Convert int64 values to standard Python int for JSON serialization
+        for candidate in candidate_results:
+            candidate['votes'] = int(candidate['votes'])
+            candidate['percentage'] = float(candidate['percentage'])
+
+        age_group_counts = {k: int(v) for k, v in age_group_counts.items()}
+        gender_counts = {k: int(v) for k, v in gender_counts.items()}
+
+        # Historical Vote Trend Analysis
+        historical_votes = constituency_df.groupby('year')['total'].sum().sort_index()
+        historical_data = {
+            "labels": [str(y) for y in historical_votes.index],
+            "data": [int(v) for v in historical_votes.values]
+        }
+
+        # --- End of new analytics logic ---
 
         return jsonify({
             "success": True,
             "constituency_name": constituency_name,
-            "analysis": analysis_results['election_analysis'],
-            "charts": chart_urls
+            "candidate_results": candidate_results,
+            "winning_candidate": {
+                "name": winning_candidate["name"],
+                "votes": int(winning_candidate["votes"]),
+                "percentage": float(winning_candidate["percentage"])
+            },
+            "margin_of_victory": int(margin_of_victory),
+            "demographics": {
+                "age_groups": age_group_counts,
+                "gender_distribution": gender_counts,
+                "location_info": location_info
+            },
+            "narrative_insights": narrative_insights,
+            "historical_data": historical_data,
+            "chart_data": { # Data structured for Chart.js
+                "candidate_votes": {
+                    "labels": [c["name"] for c in candidate_results],
+                    "votes": [int(c["votes"]) for c in candidate_results],
+                    "percentages": [float(c["percentage"]) for c in candidate_results]
+                },
+                "age_distribution": {
+                    "labels": list(age_group_counts.keys()),
+                    "counts": list(age_group_counts.values())
+                },
+                "gender_distribution": {
+                    "labels": list(gender_counts.keys()),
+                    "counts": list(gender_counts.values())
+                }
+            }
         })
         
     except Exception as e:
-        # Log the full error for debugging
         app.logger.error(f"Error in get_constituency_analysis for {constituency_name}: {e}", exc_info=True)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         return jsonify({
             "success": False,
             "error": "An internal server error occurred while generating the constituency report."
         }), 500
 
 
-=======
-    """Get detailed analysis for a specific constituency."""
-    try:
-        if analytics.llm_agent.demographic_df is None:
-            return jsonify({
-                "success": False,
-                "error": "No demographic data available"
-            }), 404
-        
-        # Filter data for the specific constituency
-        constituency_data = analytics.llm_agent.demographic_df[
-            analytics.llm_agent.demographic_df['ac_name'] == constituency_name
-        ]
-        
-        if len(constituency_data) == 0:
-            return jsonify({
-                "success": False,
-                "error": f"No data found for constituency: {constituency_name}"
-            }), 404
-        
-        # Generate constituency-specific insights
-        insights = []
-        
-        # Overview insight
-        total_candidates = len(constituency_data)
-        total_votes = constituency_data['total'].sum()
-        years_covered = sorted(constituency_data['year'].unique().tolist())
-        
-        insights.append({
-            "title": f"{constituency_name} Overview",
-            "description": f"This constituency has {total_candidates} candidates across {len(years_covered)} election years ({', '.join(map(str, years_covered))}), with a total of {total_votes:,} votes recorded.",
-            "confidence": 0.95,
-            "importance": 9
-        })
-        
-        # Age group analysis for constituency
-        age_groups = {
-            "18-25": constituency_data[(constituency_data['age'] >= 18) & (constituency_data['age'] <= 25)],
-            "26-35": constituency_data[(constituency_data['age'] >= 26) & (constituency_data['age'] <= 35)],
-            "36-50": constituency_data[(constituency_data['age'] >= 36) & (constituency_data['age'] <= 50)],
-            "50+": constituency_data[constituency_data['age'] > 50]
-        }
-        
-        age_data = {}
-        for group, data in age_groups.items():
-            if len(data) > 0:
-                group_votes = data['total'].sum()
-                percentage = (group_votes / total_votes) * 100 if total_votes > 0 else 0
-                age_data[group] = {
-                    "votes": int(group_votes),
-                    "percentage": round(percentage, 2),
-                    "candidates": len(data)
-                }
-        
-        if age_data:
-            dominant_age_group = max(age_data.keys(), key=lambda x: age_data[x]['percentage'])
-            insights.append({
-                "title": f"Age Group Patterns in {constituency_name}",
-                "description": f"In {constituency_name}, the {dominant_age_group} age group dominates with {age_data[dominant_age_group]['percentage']}% of votes, representing {age_data[dominant_age_group]['candidates']} candidates.",
-                "confidence": 0.88,
-                "importance": 8,
-                "data_points": age_data
-            })
-        
-        # Gender analysis for constituency
-        gender_data = constituency_data.groupby('sex')['total'].agg(['sum', 'count']).reset_index()
-        gender_insights = {}
-        
-        for _, row in gender_data.iterrows():
-            gender = row['sex']
-            votes = int(row['sum'])
-            percentage = (votes / total_votes) * 100 if total_votes > 0 else 0
-            
-            gender_insights[gender] = {
-                "votes": votes,
-                "percentage": round(percentage, 2),
-                "candidates": int(row['count'])
-            }
-        
-        if len(gender_insights) >= 2:
-            insights.append({
-                "title": f"Gender Distribution in {constituency_name}",
-                "description": f"Gender representation in {constituency_name} shows varied participation across different demographics, providing insights into local political engagement patterns.",
-                "confidence": 0.90,
-                "importance": 7,
-                "data_points": gender_insights
-            })
-        
-        return jsonify({
-            "success": True,
-            "constituency_name": constituency_name,
-            "insights": insights,
-            "chart_data": {
-                "age_distribution": age_data,
-                "gender_distribution": gender_insights
-            },
-            "summary": {
-                "total_candidates": total_candidates,
-                "total_votes": int(total_votes),
-                "years_covered": years_covered,
-                "age_groups_analyzed": len(age_data),
-                "gender_groups_analyzed": len(gender_insights)
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "message": f"Failed to analyze constituency: {constituency_name}"
-        }), 500
 
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
+    
+
+
+
 # Enhanced WebSocket Events
 @socketio.on('connect')
 def handle_connect():
@@ -796,11 +811,11 @@ def handle_connect():
         'network': analytics.avalanche_network,
         'timestamp': datetime.now().isoformat()
     })
-<<<<<<< HEAD
+
     # Send initial data snapshot immediately on connection
     handle_live_data_request()
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
+
 
 @socketio.on('request_ai_analysis')
 def handle_ai_analysis_request():
@@ -825,16 +840,16 @@ def handle_blockchain_status():
         'timestamp': datetime.now().isoformat()
     })
 
-# ===============================================
+# =====
 # ENHANCED WEBSOCKET HANDLERS FOR TIER 1 FEATURES
-# ===============================================
+# =====
 
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handle client disconnection."""
-    print('🔌 Client disconnected')
+    print('Client disconnected')
 
 @socketio.on('request_live_data')
 def handle_live_data_request():
@@ -846,7 +861,7 @@ def handle_live_data_request():
                 'election_data': analytics.format_demo_election(),
                 'blockchain_transactions': analytics.blockchain_events[-10:],
                 'ai_insights': analytics.get_real_time_insights(),
-                'analytics': analytics.get_enhanced_live_analytics(),
+                'analytics': analytics.get_enhanced_live_analytics(), # Keep this for other analytics
                 'avalanche_stats': analytics.get_avalanche_network_stats(),
                 'ai_predictions': analytics.get_enhanced_live_analytics()["ai_predictions"], # Add top-level ai_predictions
                 'timestamp': datetime.now().isoformat()
@@ -880,7 +895,7 @@ def handle_3d_data_request():
             })
         
         emit('visualization_data', {
-            'vote_locations': vote_locations,
+            'constituencies': vote_locations,
             'total_locations': len(vote_locations),
             'timestamp': datetime.now().isoformat()
         })
@@ -889,11 +904,12 @@ def handle_3d_data_request():
         print(f"Error handling 3D data request: {e}")
         emit('error', {'message': 'Failed to fetch 3D data'})
 
-# ===============================================
+# =====
 # ENHANCED API ENDPOINTS FOR TIER 1 FEATURES
-# ===============================================
+# =====
 
 @app.route('/api/live/transactions')
+
 def get_live_transactions():
     """Get live blockchain transactions for the feed."""
     try:
@@ -925,42 +941,51 @@ def get_live_transactions():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/ai/predictions/live')
+
 def get_live_predictions():
     """Get live AI predictions with confidence intervals."""
     try:
-        # Generate realistic prediction data
-        candidates = [
-            {'name': 'Alice Johnson', 'probability': random.uniform(30, 40)},
-            {'name': 'Bob Smith', 'probability': random.uniform(25, 35)},
-            {'name': 'Carol Davis', 'probability': random.uniform(20, 30)},
-            {'name': 'David Wilson', 'probability': random.uniform(10, 20)}
-        ]
+        if not analytics.demo_election_data or not analytics.demo_election_data['candidates']:
+            return jsonify({"error": "No election data available"}), 500
+
+        # Use the actual candidates and their vote counts
+        candidates_data = analytics.format_demo_election()['candidates']
         
-        # Normalize probabilities
-        total_prob = sum(c['probability'] for c in candidates)
-        for candidate in candidates:
-            candidate['probability'] = (candidate['probability'] / total_prob) * 100
+        if not candidates_data:
+            return jsonify({"error": "No candidates found"}), 500
+
+        # Generate predictions based on vote counts (simple model)
+        total_votes = sum(c['votes'] for c in candidates_data)
         
+        if total_votes == 0:
+            # If no votes, return equal probabilities
+            predictions = [{'name': c['name'], 'probability': 100 / len(candidates_data)} for c in candidates_data]
+        else:
+            predictions = [{'name': c['name'], 'probability': (c['votes'] / total_votes) * 100} for c in candidates_data]
+
         # Sort by probability
-        candidates.sort(key=lambda x: x['probability'], reverse=True)
+        predictions.sort(key=lambda x: x['probability'], reverse=True)
         
         # Calculate confidence
-        leading_margin = candidates[0]['probability'] - candidates[1]['probability']
-        confidence = min(95, 70 + (leading_margin * 2))
-        
+        confidence = 85.0 # Base confidence
+        if len(predictions) > 1:
+            margin = predictions[0]['probability'] - predictions[1]['probability']
+            confidence = min(98.0, 80.0 + margin * 0.5) # Confidence based on margin
+
         return jsonify({
-            'predictions': candidates,
+            'predictions': predictions[:5], # Top 5 predictions
             'confidence': round(confidence, 1),
-            'leading_candidate': candidates[0]['name'],
-            'margin': round(leading_margin, 1),
+            'leading_candidate': predictions[0]['name'] if predictions else 'N/A',
+            'margin': round(predictions[0]['probability'] - predictions[1]['probability'], 1) if len(predictions) > 1 else 0,
             'timestamp': datetime.now().isoformat(),
-            'model_version': 'Enhanced LLM v2.0'
+            'model_version': 'Enhanced LLM v2.1'
         })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/visualization/3d')
+
 def get_3d_visualization_data():
     """Get data for 3D visualization."""
     try:
@@ -1007,8 +1032,9 @@ def get_3d_visualization_data():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-<<<<<<< HEAD
+
 @app.route('/api/analytics/historical-votes')
+
 def get_historical_votes():
     """Get historical vote totals for each year."""
     try:
@@ -1036,9 +1062,10 @@ def get_historical_votes():
         app.logger.error(f"Error in get_historical_votes: {e}", exc_info=True)
         return jsonify({"success": False, "error": "Failed to calculate historical votes."}, 500)
 
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
+
 @app.route('/api/blockchain/network-stats')
+
 def get_enhanced_network_stats():
     """Get enhanced Avalanche network statistics."""
     try:
@@ -1068,15 +1095,54 @@ def get_enhanced_network_stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ===============================================
+# =====
 # FRONTEND ROUTES (Serve HTML, CSS, JS files)
-# ===============================================
+# =====
 
-<<<<<<< HEAD
+from flask_cors import cross_origin
+
+@app.route('/api/analytics/turnout-heatmap')
+
+def get_turnout_heatmap():
+    """Get data for voter turnout heatmap."""
+    try:
+        df = analytics.llm_agent.demographic_df
+        if df is None or df.empty:
+            return jsonify({"success": False, "error": "No data available."}), 500
+
+        # Group by constituency and sum the votes
+        turnout_by_constituency = df.groupby('ac_name')['total'].sum().reset_index()
+        
+        # For bubble chart, we need x, y, and r (radius) values.
+        # We can use random x, y for positioning and 'total' for radius.
+        heatmap_data = []
+        for _, row in turnout_by_constituency.iterrows():
+            heatmap_data.append({
+                'x': random.uniform(10, 90),
+                'y': random.uniform(10, 90),
+                'r': int(row['total'] / 1000), # Scale radius for better visualization
+                'label': row['ac_name']
+            })
+
+        return jsonify({
+            "success": True,
+            "data": heatmap_data
+        })
+    except Exception as e:
+        app.logger.error(f"Error in get_turnout_heatmap: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to generate turnout heatmap data."}), 500
+
+
 @app.route('/api/ping')
 def ping():
     """A simple test route to confirm the server is loading new code."""
     return jsonify({"status": "pong"})
+
+@app.route('/api/test')
+@cross_origin() # Add cross_origin for the test route as well
+def test_route():
+    """A test route to confirm Flask routes are working."""
+    return jsonify({"message": "Test route works!"})
 
 @app.route('/api/analysis/full-report', methods=['GET'])
 def generate_full_report():
@@ -1114,8 +1180,8 @@ def serve_report_chart(path):
     """Serve images from the analysis_output directory and its subdirectories."""
     return send_from_directory('analysis_output', path)
 
-=======
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
+
 @app.route('/')
 def serve_frontend():
     """Serve the main frontend HTML file."""
@@ -1132,12 +1198,12 @@ def enhanced_background_simulation():
     while True:
         if analytics.demo_election_active:
             analytics.simulate_live_votes()
-        time.sleep(random.uniform(5, 10)) # Realistic vote interval
+        time.sleep(random.uniform(1, 2)) # Faster vote interval
 
 # Start enhanced background simulation
 def start_enhanced_simulation():
     """Start the enhanced background simulation."""
-<<<<<<< HEAD
+
     socketio.start_background_task(target=enhanced_background_simulation)
 
 if __name__ == '__main__':
@@ -1145,23 +1211,23 @@ if __name__ == '__main__':
     log = logging.getLogger('eventlet.wsgi')
     log.setLevel(logging.ERROR)
 
-=======
+
     simulation_thread = threading.Thread(target=enhanced_background_simulation, daemon=True)
     simulation_thread.start()
 
 if __name__ == '__main__':
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
-    print("🏔️ AVALANCHE VOTING ANALYTICS - TIER 1 ENHANCED SYSTEM")
+
+    print("AVALANCHE VOTING ANALYTICS - TIER 1 ENHANCED SYSTEM")
     print("=" * 80)
-    print("🔥 TIER 1 FEATURES ACTIVE:")
-    print("   ✅ Live Blockchain Transaction Feed")
-    print("   ✅ AI-Powered Predictive Dashboard")
-    print("   ✅ 3D Interactive Vote Visualization")
-    print("   ✅ Dark/Light Theme with Avalanche Branding")
+    print("TIER 1 FEATURES ACTIVE:")
+    print("   Live Blockchain Transaction Feed")
+    print("   AI-Powered Predictive Dashboard")
+    print("   3D Interactive Vote Visualization")
+    print("   Dark/Light Theme with Avalanche Branding")
     print("=" * 80)
-<<<<<<< HEAD
-=======
-    print("🔗 Enhanced API Endpoints:")
+
+
+    print("Enhanced API Endpoints:")
     print("   GET  /api/health                     - Enhanced health check")
     print("   GET  /api/ai/insights               - Real-time AI insights")
     print("   GET  /api/ai/predictions            - AI-powered predictions")
@@ -1173,43 +1239,38 @@ if __name__ == '__main__':
     print("   GET  /api/analytics/enhanced        - Complete enhanced analytics")
     print("   POST /api/election/start-enhanced   - Start enhanced demo")
     print("   POST /api/election/stop-enhanced    - Stop enhanced demo")
-    print("🌐 Enhanced WebSocket Events:")
+    print("Enhanced WebSocket Events:")
     print("   connect, disconnect, request_live_data, request_3d_data")
     print("   blockchain_feed_update, prediction_update, vote_update")
     print("   new_transaction, vote_count_update, visualization_data")
-    print("⛓️ Blockchain Integration:")
+    print("Blockchain Integration:")
     print(f"   Network: {analytics.avalanche_network}")
     print(f"   Contract: {analytics.smart_contract_address}")
     print(f"   Live Transactions: {len(analytics.blockchain_events)}")
-    print("🤖 AI Features:")
+    print("AI Features:")
     print("   Enhanced LLM reasoning, Live predictions, Anomaly detection")
     print("   Real-time confidence scoring, Pattern recognition")
-    print("🎨 Frontend Features:")
+    print("Frontend Features:")
     print("   Avalanche branding, Theme switching, 3D globe visualization")
     print("   Live blockchain feed, Animated charts, Glass morphism UI")
     print("=" * 80)
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+
     
     # Start all background services
-    print("🚀 Starting background services...")
+    print("Starting background services...")
     start_enhanced_simulation()
-    print("✅ All services started successfully!")
-<<<<<<< HEAD
-    print("🌐 Server starting on: http://localhost:8080")
-=======
-    print("🌐 Frontend URL: http://localhost:5000")
-    print("📡 WebSocket URL: http://localhost:5000")
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+    print("All services started successfully!")
+
+    print("Server starting on: http://localhost:8080")
+
+    print("Frontend URL: http://localhost:8080")
+    print("WebSocket URL: http://localhost:8080")
+
     print("=" * 80)
     
     # Run the enhanced Flask-SocketIO app
     socketio.run(app, 
                  host='0.0.0.0', 
-<<<<<<< HEAD
                  port=8080,
-                 debug=False,
-=======
-                 port=5000,
                  debug=False,  # Set to False for stability
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
                  allow_unsafe_werkzeug=True)

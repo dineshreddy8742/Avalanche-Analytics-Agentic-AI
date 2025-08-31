@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-# Environments
-.venv/
-__pycache__/
-.env
-
-# Build artifacts
-build/
-dist/
-*.spec
-=======
 # Python
 __pycache__/
 *.pyc
@@ -28,8 +17,6 @@ ENV/
 node_modules/
 
 # Secrets
-.env
-
 # Generated files
 analysis_output/
 
@@ -42,4 +29,4 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
->>>>>>> 50d8d612ffb9108b585319807627277b581ec3be
+.env

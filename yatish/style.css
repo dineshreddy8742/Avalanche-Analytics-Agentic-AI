@@ -57,28 +57,6 @@
     --glass-border: rgba(255, 255, 255, 0.1);
 }
 
-/* Base Text and Heading Styles */
-h1, h2, h3, h4, h5, h6 {
-    color: var(--text-primary);
-    font-weight: 700;
-}
-
-p {
-    color: var(--text-secondary);
-}
-
-.section-title-dynamic {
-    color: var(--text-primary) !important;
-}
-
-#constituency-summary-text p {
-    color: var(--text-primary);
-}
-
-#constituency-summary-text p.text-muted {
-    color: var(--text-secondary) !important;
-}
-
 /* Footer Styles */
 .footer {
     background: var(--gradient-rainbow);
@@ -154,8 +132,8 @@ body {
     border: 1px solid var(--glass-border);
     color: var(--text-primary);
     border-radius: 20px;
-    padding: 12px 20px; /* Increased padding */
-    font-size: 16px; /* Increased font size */
+    padding: 8px 16px;
+    font-size: 14px;
     transition: all 0.3s ease;
     width: 100%;
 }
@@ -390,7 +368,7 @@ body {
 }
 
 .brand-sub {
-    font-size: 1.6rem; /* Same size as brand-text */
+    font-size: 0.9rem;
     font-weight: 400;
     opacity: 0.9;
     margin-left: 0.5rem;
@@ -626,6 +604,10 @@ body {
 .hero-title {
     font-size: 2.5rem;
     font-weight: 800;
+    background: linear-gradient(45deg, var(--avalanche-red), var(--avalanche-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 0.5rem;
 }
 
@@ -684,6 +666,10 @@ body {
     margin-bottom: 1rem;
     font-weight: 700;
     font-size: 1.1rem;
+    background: linear-gradient(45deg, var(--avalanche-blue), var(--avalanche-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     animation: headerGlow 2s ease-in-out infinite;
 }
 
@@ -921,9 +907,9 @@ body {
 
 .stat-content p {
     color: var(--text-secondary);
-    font-size: 1.1rem; /* Increased font size */
+    font-size: 0.9rem;
     margin: 0;
-    font-weight: 700; /* Made bold */
+    font-weight: 500;
 }
 
 /* ===============================================
@@ -1022,13 +1008,6 @@ body {
 .avalanche-gradient h2 {
     font-weight: 700;
     font-size: 1.5rem;
-}
-
-#constituency-analysis .avalanche-gradient h2 {
-    width: 100%;
-    text-align: center;
-    font-size: 2.5rem;
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* Enhanced Real-time Colorful Indicators */
@@ -1257,11 +1236,20 @@ body {
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
+    background: linear-gradient(45deg, var(--avalanche-blue), var(--avalanche-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     transition: all 0.3s ease;
 }
 
 .chart-card:hover .chart-title {
-    color: var(--avalanche-blue);
+    background: var(--gradient-rainbow);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: hue-rotate(0deg);
+    animation: titleRainbow 2s ease-in-out infinite;
 }
 
 @keyframes titleRainbow {
@@ -1272,17 +1260,9 @@ body {
 @keyframes brightTextGlow {
     0%, 100% {
         text-shadow: 0 0 2px #ffffff, 0 0 5px #00D4AA, 0 0 8px #2D74DA;
-        transform: translateX(0px) translateY(0px); /* No vibration */
-    }
-    25% {
-        transform: translateX(0.5px) translateY(0.5px); /* Subtle vibration */
-    }
-    75% {
-        transform: translateX(-0.5px) translateY(-0.5px); /* Subtle vibration */
     }
     50% {
         text-shadow: 0 0 4px #ffffff, 0 0 8px #00D4AA, 0 0 12px #2D74DA;
-        transform: translateX(0px) translateY(0px); /* No vibration */
     }
 }
 
@@ -1300,7 +1280,7 @@ body {
 
 .chart-container {
     position: relative;
-    min-height: 450px; /* Increased height */
+    min-height: 350px;
     width: 100%;
     background: radial-gradient(circle at center, 
         rgba(45, 116, 218, 0.03) 0%, 
