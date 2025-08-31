@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Avalanche Voting Analytics - Enhanced System Loading...');
     
-    const API_BASE_URL = 'http://localhost:8080';
-    const WEBSOCKET_URL = 'http://localhost:8080';
+    const API_BASE_URL = window.location.origin;
+    const WEBSOCKET_URL = window.location.origin.replace('http', 'ws'); // For WebSocket, use ws/wss
 
     let currentConstituency = null;
 
