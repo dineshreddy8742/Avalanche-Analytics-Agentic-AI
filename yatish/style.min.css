@@ -1,9 +1,0 @@
-@import url("style.css");
-/* additional responsive fixes */
-@media (max-width: 576px){
-  .view-controls{display:flex;flex-wrap:wrap;gap:.5rem}
-  .view-controls .btn{flex:1 1 30%}
-  .search-container{min-width:200px}
-}
-.chart-container{min-height:260px}
-.search-results{z-index:1000;}
